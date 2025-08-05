@@ -63,4 +63,8 @@ class User extends Authenticatable
     {
         return $this->role === 'worker';
     }
+    public function processes()
+    {
+        return $this->belongsToMany(Process::class);
+    }
 }

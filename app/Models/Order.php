@@ -46,4 +46,9 @@ class Order extends Model
     {
         return $this->belongsTo(Product::class, 'products_id');
     }
+    public function production()
+    {
+        return $this->hasOne(Production::class);
+    }
+
 }

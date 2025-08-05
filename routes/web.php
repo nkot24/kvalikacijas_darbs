@@ -6,6 +6,9 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ProcessController;
+use App\Http\Controllers\ProductionController;
+use App\Http\Controllers\TaskController;
 
 Route::get('/', function () {
     return view('/auth/login');
@@ -29,6 +32,10 @@ Route::middleware('auth')->group(function () {
     Route::resource('clients', ClientController::class);
     Route::resource('products', ProductController::class);
     Route::resource('users', UserController::class);
+    Route::resource('processes', ProcessController::class);
+    Route::resource('productions', ProductionController::class);
+     Route::get('/tasks', [TaskController::class, 'index'])->name('tasks.index');
+    Route::put('/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
 
     
 
