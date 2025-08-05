@@ -25,9 +25,16 @@ class AuthenticatedSessionController extends Controller
     public function store(LoginRequest $request): RedirectResponse
     {
         $request->authenticate();
-
         $request->session()->regenerate();
 
+        $user = Auth::user();
+
+        if ($user->role === 'worker') {
+            // Redirect workers to tasks page
+            return redirect()->route('tasks.index');
+        }
+
+        // Other users go to dashboard
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
