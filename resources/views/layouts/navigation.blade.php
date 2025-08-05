@@ -30,6 +30,9 @@
                             <x-dropdown-link :href="route('productions.index')" :active="request()->routeIs('productions.*')">
                                 {{ __('Ražošana') }}
                             </x-dropdown-link>
+                            <x-dropdown-link :href="route('tasks.index')" :active="request()->routeIs('tasks.*')">
+                                {{ __('Uzdevumi') }}
+                            </x-dropdown-link>
                         </x-slot>
                     </x-dropdown>
 
@@ -146,6 +149,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('productions.index')" :active="request()->routeIs('productions.*')">
                 {{ __('Productions') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('tasks.index')" :active="request()->routeIs('tasks.*')">
+                {{ __('Tasks') }}
             </x-responsive-nav-link>
         </div>
 

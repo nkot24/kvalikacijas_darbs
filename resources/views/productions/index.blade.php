@@ -14,10 +14,11 @@
             @foreach ($productions as $production)
                 <div class="bg-white p-6 mb-4 shadow rounded">
                     <h3 class="text-lg font-bold mb-2">Pasūtījums: {{ $production->order->pasutijuma_numurs }}</h3>
-                    <p>Produkts: {{ $production->order->produkts }}</p>
+                    <p>Produkts: {{ $production->order->product->nosaukums ?? $production->order->produkts }}</p>
                     <p>Daudzums: {{ $production->order->daudzums }}</p>
                     <p>Prioritāte: {{ $production->order->prioritāte }}</p>
                     <p>Izpildes datums: {{ $production->order->izpildes_datums }}</p>
+                    <p><strong>Piezīmes:</strong> {{ $production->order->piezimes ?? '-' }}</p>
                     <a href="{{ route('productions.show', $production) }}" class="text-blue-600 hover:underline">Skatīt progresu</a>
                 </div>
             @endforeach

@@ -8,9 +8,12 @@
         <div class="bg-white shadow-sm rounded-lg p-6 mb-6">
             @forelse ($currentTasks as $task)
                 <div class="border p-4 rounded mb-4">
-                    <h4 class="font-bold">{{ $task->production->order->produkts ?? 'Produkts nav pieejams' }}</h4>
+                    <h4 class="font-bold">
+                        {{ optional($task->production->order->product)->nosaukums ?? 'Produkts nav pieejams' }}
+                    </h4>
                     <p><strong>Process:</strong> {{ $task->process->processa_nosaukums }}</p>
                     <p><strong>Daudzums:</strong> {{ $task->production->order->daudzums }}</p>
+                    <p><strong>Piezīmes:</strong> {{ $task->production->order->piezimes ?? '-' }}</p>
                     <p><strong>Prioritāte:</strong> {{ $task->production->order->prioritāte }}</p>
                     <p><strong>Izpildes datums:</strong> {{ $task->production->order->izpildes_datums }}</p>
 
@@ -42,9 +45,12 @@
         <div class="bg-white shadow-sm rounded-lg p-6">
             @forelse ($futureTasks as $task)
                 <div class="border p-4 rounded mb-4 opacity-50">
-                    <h4 class="font-bold">{{ $task->production->order->produkts ?? 'Produkts nav pieejams' }}</h4>
+                    <h4 class="font-bold">
+                        {{ optional($task->production->order->product)->nosaukums ?? 'Produkts nav pieejams' }}
+                    </h4>
                     <p><strong>Process:</strong> {{ $task->process->processa_nosaukums }}</p>
                     <p><strong>Daudzums:</strong> {{ $task->production->order->daudzums }}</p>
+                    <p><strong>Piezīmes:</strong> {{ $task->production->order->piezimes ?? '-' }}</p>
                     <p><strong>Prioritāte:</strong> {{ $task->production->order->prioritāte }}</p>
                     <p><strong>Izpildes datums:</strong> {{ $task->production->order->izpildes_datums }}</p>
                 </div>

@@ -61,6 +61,7 @@
                                 <th class="border px-4 py-2">Izpildes datums</th>
                                 <th class="border px-4 py-2">Prioritāte</th>
                                 <th class="border px-4 py-2">Statuss</th>
+                                <th class="border px-4 py-2">Piezīmes</th>
                                 <th class="border px-4 py-2">Darbības</th>
                             </tr>
                         </thead>
@@ -75,6 +76,8 @@
                                     <td class="border px-4 py-2">{{ $order->izpildes_datums }}</td>
                                     <td class="border px-4 py-2">{{ $order->prioritāte }}</td>
                                     <td class="border px-4 py-2">{{ $order->statuss }}</td>
+                                    <td class="border px-4 py-2">{{ $order->piezimes ?? '-' }}</td>
+
                                     <td class="border px-4 py-2 space-y-2">
                                         <a href="{{ route('orders.edit', $order) }}" class="text-blue-600 hover:underline block">Rediģēt</a>
                                         <form action="{{ route('orders.destroy', $order) }}" method="POST" onsubmit="return confirm('Vai tiešām vēlaties dzēst šo pasūtījumu?');">

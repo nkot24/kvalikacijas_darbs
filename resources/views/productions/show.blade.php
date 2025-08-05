@@ -8,8 +8,9 @@
 
             <div class="bg-white p-6 rounded shadow">
                 <h3 class="text-lg font-bold mb-2">Pasūtījums: {{ $production->order->pasutijuma_numurs }}</h3>
-                <p>Produkts: {{ $production->order->produkts }}</p>
+                <p>Produkts: {{ $production->order->product->nosaukums ?? $production->order->produkts }}</p>
                 <p>Daudzums: {{ $production->order->daudzums }}</p>
+                <p><strong>Piezīmes:</strong> {{ $production->order->piezimes ?? '-' }}</p>
                 <p>Prioritāte: {{ $production->order->prioritāte }}</p>
                 <p>Izpildes datums: {{ $production->order->izpildes_datums }}</p>
             </div>
