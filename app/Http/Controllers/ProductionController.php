@@ -39,15 +39,30 @@ class ProductionController extends Controller
             'order_id' => $validated['order_id'],
         ]);
 
+        // ✅ INSERT THIS BLOCK BELOW
         foreach ($validated['process_ids'] as $processId) {
             $process = \App\Models\Process::findOrFail($processId);
-            foreach ($process->users as $user) {
-                \App\Models\Task::create([
-                    'production_id' => $production->id,
-                    'process_id' => $processId,
-                    'user_id' => $user->id,
-                    'status' => 'nav uzsākts',
-                ]);
+
+            $selectedUserIds = $request->input("users.$processId");
+
+            if (is_array($selectedUserIds) && count($selectedUserIds) > 0) {
+                foreach ($selectedUserIds as $userId) {
+                    Task::create([
+                        'production_id' => $production->id,
+                        'process_id' => $processId,
+                        'user_id' => $userId,
+                        'status' => 'nav uzsākts',
+                    ]);
+                }
+            } else {
+                foreach ($process->users as $user) {
+                    Task::create([
+                        'production_id' => $production->id,
+                        'process_id' => $processId,
+                        'user_id' => $user->id,
+                        'status' => 'nav uzsākts',
+                    ]);
+                }
             }
         }
 

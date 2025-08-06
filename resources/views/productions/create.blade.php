@@ -9,36 +9,45 @@
             <form action="{{ route('productions.store') }}" method="POST">
                 @csrf
 
-                <div class="mb-4">
-                    <label for="order_id" class="block font-semibold">Izvēlieties pasūtījumu:</label>
-                    <select name="order_id" required class="w-full border p-2">
+                {{-- Order selection --}}
+                <div class="mb-6">
+                    <label for="order_id" class="block font-semibold mb-2">Izvēlieties pasūtījumu:</label>
+                    <select name="order_id" required class="w-full border border-gray-300 p-2 rounded">
                         @foreach ($orders as $order)
                             <option value="{{ $order->id }}">{{ $order->pasutijuma_numurs }} – {{ $order->produkts }}</option>
                         @endforeach
                     </select>
                 </div>
 
-                <div class="mb-4">
-                    <label class="block font-semibold">Izvēlieties procesus:</label>
+                {{-- Process and per-process user selection --}}
+                <div class="mb-6">
+                    <label class="block font-semibold mb-2">Izvēlieties procesus un piešķiriet darbiniekus (ja nepieciešams):</label>
+
                     @foreach ($processes as $process)
-                        <label class="block">
-                            <input type="checkbox" name="process_ids[]" value="{{ $process->id }}">
-                            {{ $process->processa_nosaukums }}
-                        </label>
+                        <div class="border p-4 mb-4 rounded bg-gray-50">
+                            <label class="block font-semibold mb-2">
+                                <input type="checkbox" name="process_ids[]" value="{{ $process->id }}">
+                                {{ $process->processa_nosaukums }}
+                            </label>
+
+                            <label class="block text-sm mb-1">Darbinieki šim procesam:</label>
+                            <select name="users[{{ $process->id }}][]" multiple class="w-full border border-gray-300 p-2 rounded">
+                                @foreach ($process->users as $user)
+                                    <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->role }})</option>
+                                @endforeach
+                            </select>
+
+                            <p class="text-sm text-gray-500 mt-1">Ja neizvēlēsieties nevienu darbinieku, uzdevums tiks piešķirts visiem šī procesa darbiniekiem.</p>
+                        </div>
                     @endforeach
                 </div>
 
-                <div class="mb-4">
-                    <label class="block font-semibold">Piešķirt darbiniekus:</label>
-                    @foreach ($users as $user)
-                        <label class="block">
-                            <input type="checkbox" name="user_ids[]" value="{{ $user->id }}">
-                            {{ $user->name }} ({{ $user->role }})
-                        </label>
-                    @endforeach
+                {{-- Submit button --}}
+                <div class="mt-6">
+                    <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
+                        Izveidot
+                    </button>
                 </div>
-
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Izveidot</button>
             </form>
         </div>
     </div>
