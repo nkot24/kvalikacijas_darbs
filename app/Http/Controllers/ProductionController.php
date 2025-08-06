@@ -20,7 +20,7 @@ class ProductionController extends Controller
     public function create()
     {
         // Only fetch orders where statuss is 'nav uzsākts'
-        $orders = Order::where('statuss', 'nav uzsākts')->get();
+        $orders = Order::where('statuss', 'nav nodots ražošanai')->get();
         $processes = Process::all();
         $users = User::all();
 
