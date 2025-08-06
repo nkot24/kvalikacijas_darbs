@@ -19,9 +19,11 @@ class ProductionController extends Controller
 
     public function create()
     {
-        $orders = Order::all();
+        // Only fetch orders where statuss is 'nav uzsākts'
+        $orders = Order::where('statuss', 'nav uzsākts')->get();
         $processes = Process::all();
         $users = User::all();
+
         return view('productions.create', compact('orders', 'processes', 'users'));
     }
 
