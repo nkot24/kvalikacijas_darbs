@@ -124,4 +124,9 @@ class OrderController extends Controller
 
         return redirect()->route('orders.index')->with('success', 'Import pabeigts veiksmīgi!');
     }
+    public function print(Order $order)
+    {
+        $order->load(['product', 'client']);
+        return view('orders.print', compact('order'));
+    }
 }

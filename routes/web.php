@@ -29,6 +29,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/orders/import', [OrderController::class, 'fullImport'])->name('orders.fullImport');
 
     Route::resource('orders', OrderController::class);
+    Route::get('/orders/{order}/print', [OrderController::class, 'print'])->name('orders.print'); // print sheet
     Route::resource('clients', ClientController::class);
     Route::resource('products', ProductController::class);
     Route::resource('users', UserController::class);

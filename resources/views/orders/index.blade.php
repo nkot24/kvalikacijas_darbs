@@ -80,6 +80,11 @@
 
                                     <td class="border px-4 py-2 space-y-2">
                                         <a href="{{ route('orders.edit', $order) }}" class="text-blue-600 hover:underline block">Rediģēt</a>
+                                        <a href="{{ route('orders.show', $order) }}" class="text-blue-600 hover:underline block">Skatīt</a>
+                                        <a href="{{ route('orders.print', $order) }}" target="_blank"
+                                        class="text-purple-600 hover:underline block">
+                                        🖨️ Izprintēt ražošanas lapu
+                                        </a>
                                         <form action="{{ route('orders.destroy', $order) }}" method="POST" onsubmit="return confirm('Vai tiešām vēlaties dzēst šo pasūtījumu?');">
                                             @csrf
                                             @method('DELETE')
