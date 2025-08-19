@@ -27,38 +27,51 @@ class OrderController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'client_id'       => 'nullable|exists:clients,id',
-            'klients'         => 'nullable|string|max:255',
-            'products_id'     => 'nullable|exists:products,id',
-            'produkts'        => 'nullable|string|max:255',
-            'daudzums'        => 'required|integer|min:1',
-            'izpildes_datums' => 'nullable|date',
-            'prioritāte'      => 'nullable|string',
-            'statuss'         => 'nullable|string',
-            'piezimes'        => 'nullable|string',
+        // Validate fields
+        $validated = $request->validate([
+            'client_id' => 'nullable|string',
+            'klients' => 'nullable|string|max:255',
+            'products_id' => 'nullable|string',
+            'produkts' => 'nullable|string|max:255',
+            'daudzums' => 'required|integer|min:1',
+            'izpildes_datums' => 'required|date',
+            'prioritāte' => 'required|in:zema,normāla,augsta',
+            'piezimes' => 'nullable|string',
         ]);
 
-        $order = new Order();
+        // Handle one-time client
+        if ($request->client_id === 'vienreizējs') {
+            $clientName = $request->klients;
+            $clientId = null; // or create new client in DB and get ID
+        } else {
+            $clientId = $request->client_id;
+            $clientName = null;
+        }
 
-        $order->datums = now()->toDateString();
+        // Handle one-time product
+        if ($request->products_id === 'vienreizējs') {
+            $productName = $request->produkts;
+            $productId = null; // or create new product in DB and get ID
+        } else {
+            $productId = $request->products_id;
+            $productName = null;
+        }
 
-        $order->client_id = $request->client_id ?: null;
-        $order->klients = $request->client_id ? null : $request->klients;
+        // Create order
+        Order::create([
+            'client_id' => $clientId,
+            'klients' => $clientName,
+            'products_id' => $productId,
+            'produkts' => $productName,
+            'daudzums' => $validated['daudzums'],
+            'izpildes_datums' => $validated['izpildes_datums'],
+            'prioritāte' => $validated['prioritāte'],
+            'piezimes' => $validated['piezimes'] ?? null,
+        ]);
 
-        $order->products_id = $request->products_id ?: null;
-        $order->produkts = $request->products_id ? null : $request->produkts;
-
-        $order->daudzums = $request->daudzums;
-        $order->izpildes_datums = $request->izpildes_datums;
-        $order->prioritāte = $request->prioritāte ?? 'normāla';
-        $order->statuss = $request->statuss ?? 'nav nodots ražošanai';
-        $order->piezimes = $request->piezimes;
-
-        $order->save();
-
-        return redirect()->route('orders.index')->with('success', 'Pasūtījums izveidots veiksmīgi!');
+        return redirect()->route('orders.index')->with('success', 'Pasūtījums saglabāts veiksmīgi!');
     }
+
 
     public function show(Order $order)
     {
