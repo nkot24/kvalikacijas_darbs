@@ -28,7 +28,7 @@ class OrderController extends Controller
         }
 
         // Sorting
-        $sortable = ['pasutijuma_numurs', 'datums', 'daudzums', 'izpildes_datums', 'prioritāte', 'statuss'];
+        $sortable = ['pasutijuma_numurs', 'datums', 'daudzums', 'izpildes_datums', 'prioritāte', 'statuss', 'klients'];
         $sort = $request->input('sort', 'datums');
         $direction = $request->input('direction', 'asc');
 
@@ -36,7 +36,15 @@ class OrderController extends Controller
             $sort = 'datums';
         }
 
-        $orders = $query->orderBy($sort, $direction)->paginate(15)->appends($request->all());
+        if ($sort === 'klients') {
+            $query->leftJoin('clients', 'orders.client_id', '=', 'clients.id')
+                ->orderByRaw("COALESCE(clients.nosaukums, orders.klients) $direction")
+                ->select('orders.*');
+        } else {
+            $query->orderBy($sort, $direction);
+        }
+
+        $orders = $query->paginate(15)->appends($request->all());
 
         return view('orders.index', compact('orders'));
         }

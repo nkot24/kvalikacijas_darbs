@@ -78,7 +78,7 @@
                             <tr>
                                 <th class="border px-4 py-2">{!! sortLink('pasutijuma_numurs', 'Pasūtījuma numurs') !!}</th>
                                 <th class="border px-4 py-2">{!! sortLink('datums', 'Datums') !!}</th>
-                                <th class="border px-4 py-2">Klients</th>
+                                <th class="border px-4 py-2">{!! sortLink('klients', 'Klients') !!}</th> {{-- Make sortable --}}
                                 <th class="border px-4 py-2">Produkts</th>
                                 <th class="border px-4 py-2">{!! sortLink('daudzums', 'Daudzums') !!}</th>
                                 <th class="border px-4 py-2">{!! sortLink('izpildes_datums', 'Izpildes datums') !!}</th>
