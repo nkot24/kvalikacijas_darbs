@@ -12,11 +12,34 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class OrderController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $orders = Order::with(['client', 'product'])->latest()->get();
+        $query = Order::with(['client', 'product']);
+
+        // Search
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('pasutijuma_numurs', 'like', "%$search%")
+                ->orWhere('klients', 'like', "%$search%")
+                ->orWhereHas('client', fn($q) => $q->where('nosaukums', 'like', "%$search%"))
+                ->orWhereHas('product', fn($q) => $q->where('nosaukums', 'like', "%$search%"));
+            });
+        }
+
+        // Sorting
+        $sortable = ['pasutijuma_numurs', 'datums', 'daudzums', 'izpildes_datums', 'prioritāte', 'statuss'];
+        $sort = $request->input('sort', 'datums');
+        $direction = $request->input('direction', 'asc');
+
+        if (!in_array($sort, $sortable)) {
+            $sort = 'datums';
+        }
+
+        $orders = $query->orderBy($sort, $direction)->paginate(15)->appends($request->all());
+
         return view('orders.index', compact('orders'));
-    }
+        }
 
     public function create()
     {

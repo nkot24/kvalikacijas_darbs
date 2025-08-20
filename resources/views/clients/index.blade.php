@@ -76,7 +76,7 @@
                                             @foreach ($client->contactPersons as $cp)
                                                 <li class="mb-1">
                                                     <strong>{{ $cp->kontakt_personas_vards }}</strong><br>
-                                                    E-pasts: {{ $cp->e_pasts ?? '-' }}<br>
+                                                    E-pasts: {{ $cp->{'e-pasts'} ?? '-' }}
                                                     Telefons: {{ $cp->telefons ?? '-' }}
                                                 </li>
                                             @endforeach
