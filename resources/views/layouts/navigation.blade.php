@@ -37,6 +37,9 @@
                                     <x-dropdown-link :href="route('tasks.index')" :active="request()->routeIs('tasks.*')">
                                         {{ __('Uzdevumi') }}
                                     </x-dropdown-link>
+                                    <x-dropdown-link :href="route('avansa_rekini.create')" :active="request()->routeIs('avansa_rekini.*')">
+                                        {{ __('Avansa rēķins') }}
+                                    </x-dropdown-link>
                                 </x-slot>
                             </x-dropdown>
 
@@ -156,6 +159,9 @@
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('tasks.index')" :active="request()->routeIs('tasks.*')">
                         {{ __('Tasks') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('avansa_rekini.create')" :active="request()->routeIs('avansa_rekini.*')">
+                        {{ __('Avansa rēķins') }}
                     </x-responsive-nav-link>
                 </div>
 

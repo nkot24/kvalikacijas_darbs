@@ -9,6 +9,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProcessController;
 use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\AvansaRekinsController;
 
 Route::get('/', function () {
     return view('/auth/login');
@@ -35,8 +36,15 @@ Route::middleware('auth')->group(function () {
     Route::resource('users', UserController::class);
     Route::resource('processes', ProcessController::class);
     Route::resource('productions', ProductionController::class);
-     Route::get('/tasks', [TaskController::class, 'index'])->name('tasks.index');
+    Route::get('/tasks', [TaskController::class, 'index'])->name('tasks.index');
     Route::put('/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
+    Route::get('/avansa-rekini/create', [AvansaRekinsController::class, 'create'])->name('avansa_rekini.create');
+    Route::post('/avanss', [AvansaRekinsController::class, 'store'])->name('avanss.store');
+    Route::post('/avansa-rekini/get-orders', [AvansaRekinsController::class, 'getOrders'])->name('avansa_rekini.getOrders');
+    Route::post('/avansa-rekini/generate', [AvansaRekinsController::class, 'generate'])->name('avansa_rekini.generate');
+    Route::get('/api/orders/by-client/{client_id}', [AvansaRekinsController::class, 'getOrders']);
+
+    
 
     
 
