@@ -20,7 +20,13 @@
                 @foreach ($production->tasks as $task)
                     <div class="mb-4 border-b pb-4">
                         <p><strong>Process:</strong> {{ $task->process->processa_nosaukums }}</p>
-                        <p><strong>Darbinieks:</strong> {{ $task->user->name }}</p>
+                        <p><strong>Darbinieks:</strong>
+                            @if ($task->user)
+                                {{ $task->user->name }}
+                            @else
+                                <span class="text-blue-600">Kopīgs uzdevums</span>
+                            @endif
+                        </p>
                         <p><strong>Statuss:</strong> {{ $task->status }}</p>
                         @if ($task->done_amount)
                             <p><strong>Izpildīts daudzums:</strong> {{ $task->done_amount }} no {{ $production->order->daudzums }}</p>

@@ -19,11 +19,9 @@ class ProductionController extends Controller
 
     public function create()
     {
-        // Only fetch orders where statuss is 'nav uzsākts'
         $orders = Order::where('statuss', 'nav nodots ražošanai')->get();
         $processes = Process::all();
         $users = User::all();
-
         return view('productions.create', compact('orders', 'processes', 'users'));
     }
 
@@ -39,10 +37,8 @@ class ProductionController extends Controller
             'order_id' => $validated['order_id'],
         ]);
 
-        // ✅ INSERT THIS BLOCK BELOW
         foreach ($validated['process_ids'] as $processId) {
-            $process = \App\Models\Process::findOrFail($processId);
-
+            $process = Process::findOrFail($processId);
             $selectedUserIds = $request->input("users.$processId");
 
             if (is_array($selectedUserIds) && count($selectedUserIds) > 0) {
@@ -55,18 +51,17 @@ class ProductionController extends Controller
                     ]);
                 }
             } else {
-                foreach ($process->users as $user) {
-                    Task::create([
-                        'production_id' => $production->id,
-                        'process_id' => $processId,
-                        'user_id' => $user->id,
-                        'status' => 'nav uzsākts',
-                    ]);
-                }
+                // ❗ Create ONE shared task with user_id = null
+                Task::create([
+                    'production_id' => $production->id,
+                    'process_id' => $processId,
+                    'user_id' => null, // Means any user from this process can see/complete it
+                    'status' => 'nav uzsākts',
+                ]);
             }
         }
 
-        // ✅ Update order status to "nodots ražošanai"
+        // Update order status
         $order = Order::find($request->order_id);
         $order->update(['statuss' => 'nodots ražošanai']);
 
@@ -85,4 +80,3 @@ class ProductionController extends Controller
         return redirect()->route('productions.index')->with('success', 'Ražošana dzēsta.');
     }
 }
-
