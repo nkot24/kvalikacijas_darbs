@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Task;
 use App\Models\Production;
 use App\Models\Order;
-use App\Models\Process;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -71,7 +70,6 @@ class TaskController extends Controller
     {
         $user = auth()->user();
 
-        // Check permission: either assigned or shared & user is in process
         if (
             $task->user_id !== null && $task->user_id !== $user->id ||
             $task->user_id === null && !$task->process->users->contains($user)
@@ -86,7 +84,6 @@ class TaskController extends Controller
     {
         $user = auth()->user();
 
-        // Check permission again before update
         if (
             $task->user_id !== null && $task->user_id !== $user->id ||
             $task->user_id === null && !$task->process->users->contains($user)
@@ -99,35 +96,48 @@ class TaskController extends Controller
             'done_amount' => 'nullable|integer|min:0',
         ]);
 
-        // If it's a shared task and the user starts or completes it, optionally claim it
+        // Claim shared task
         if ($task->user_id === null) {
             $task->user_id = $user->id;
         }
 
-        $task->update([
-            'status' => $validated['status'],
-            'done_amount' => $validated['done_amount'] ?? $task->done_amount,
-        ]);
-
-        $production = Production::with('tasks')->find($task->production_id);
-        if (!$production) {
-            return redirect()->back()->with('error', 'Ražošana nav atrasta.');
+        // Increment done_amount instead of overwriting
+        if ($validated['status'] === 'pabeigts') {
+            $newDone = $task->production->order->daudzums;
+        } elseif ($validated['status'] === 'daļēji pabeigts') {
+            $inputDone = (int)($validated['done_amount'] ?? 0);
+            $newDone = ($task->done_amount ?? 0) + $inputDone;
+            if ($newDone >= $task->production->order->daudzums) {
+                $newDone = $task->production->order->daudzums;
+                $validated['status'] = 'pabeigts';
+            }
+        } else {
+            $newDone = 0;
         }
 
-        $highestProcessId = $production->tasks->max('process_id');
-        $highestProcessTasks = $production->tasks->where('process_id', $highestProcessId);
+        $task->update([
+            'status' => $validated['status'],
+            'done_amount' => $newDone,
+        ]);
 
-        $allDone = $highestProcessTasks->every(fn($t) => $t->status === 'pabeigts');
+        // Check if production is fully done
+        $production = Production::with('tasks')->find($task->production_id);
+        if ($production) {
+            $highestProcessId = $production->tasks->max('process_id');
+            $highestProcessTasks = $production->tasks->where('process_id', $highestProcessId);
 
-        if ($allDone) {
-            $order = Order::find($production->order_id);
-            if ($order) {
-                $order->update(['statuss' => 'pabeigts']);
+            $allDone = $highestProcessTasks->every(fn($t) => $t->status === 'pabeigts');
+
+            if ($allDone) {
+                $order = Order::find($production->order_id);
+                if ($order) {
+                    $order->update(['statuss' => 'pabeigts']);
+                }
+                $production->delete();
             }
-
-            $production->delete(); // Optional
         }
 
         return redirect()->route('tasks.index')->with('success', 'Uzdevums atjaunināts veiksmīgi.');
     }
+
 }
