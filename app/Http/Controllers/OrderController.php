@@ -106,6 +106,14 @@ class OrderController extends Controller
 
     public function show(Order $order)
     {
+         $order->load([
+            'client',
+            'product',
+            'production.tasks.process',
+            'production.tasks.user',
+            'production.tasks.workLogs.user',
+        ]);
+
         return view('orders.show', compact('order'));
     }
 

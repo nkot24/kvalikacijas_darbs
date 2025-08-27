@@ -1,38 +1,83 @@
+{{-- resources/views/productions/show.blade.php --}}
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Ražošanas progress</h2>
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            Ražošana #{{ $production->id }}
+        </h2>
     </x-slot>
 
     <div class="py-6">
-        <div class="max-w-7xl mx-auto space-y-4">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
-            <div class="bg-white p-6 rounded shadow">
-                <h3 class="text-lg font-bold mb-2">Pasūtījums: {{ $production->order->pasutijuma_numurs }}</h3>
-                <p>Produkts: {{ $production->order->product->nosaukums ?? $production->order->produkts }}</p>
-                <p>Daudzums: {{ $production->order->daudzums }}</p>
-                <p><strong>Piezīmes:</strong> {{ $production->order->piezimes ?? '-' }}</p>
-                <p>Prioritāte: {{ $production->order->prioritāte }}</p>
-                <p>Izpildes datums: {{ $production->order->izpildes_datums }}</p>
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6 text-gray-900">
+                    <p><strong>Pasūtījums:</strong> #{{ data_get($production, 'order.id', '-') }}</p>
+                    <p><strong>Produkta nosaukums:</strong> {{ data_get($production, 'order.produkts', '-') }}</p>
+                    <p><strong>Daudzums:</strong> {{ (int) data_get($production, 'order.daudzums', 0) }}</p>
+                </div>
             </div>
 
-            <div class="bg-white p-6 rounded shadow">
-                <h4 class="text-md font-bold mb-2">Uzdevumi</h4>
-                @foreach ($production->tasks as $task)
-                    <div class="mb-4 border-b pb-4">
-                        <p><strong>Process:</strong> {{ $task->process->processa_nosaukums }}</p>
-                        <p><strong>Darbinieks:</strong>
-                            @if ($task->user)
-                                {{ $task->user->name }}
-                            @else
-                                <span class="text-blue-600">Kopīgs uzdevums</span>
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold mb-3">Procesi</h3>
+
+                    @php
+                        $orderQty = (int) data_get($production, 'order.daudzums', 0);
+                    @endphp
+
+                    @forelse(($allTasks ?? collect())->sortBy('process_id') as $task)
+                        @php
+                            $done = (int) ($task->done_amount ?? 0);
+                            $pct  = $orderQty > 0 ? round(($done / $orderQty) * 100) : 0;
+
+                            $byUser = $task->workLogs
+                                ->groupBy('user_id')
+                                ->map(fn($logs) => [
+                                    'name'  => optional($logs->first()->user)->name ?? 'Nezināms',
+                                    'total' => $logs->sum('amount'),
+                                ])
+                                ->sortByDesc('total');
+                        @endphp
+
+                        <div class="border-b py-3 {{ $task->status === 'pabeigts' ? 'opacity-90' : '' }}">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <div><strong>Process:</strong> {{ data_get($task, 'process.processa_nosaukums', '-') }}</div>
+                                    <div class="text-sm text-gray-700">
+                                        <strong>Lietotājs:</strong>
+                                        @if ($task->user) {{ $task->user->name }}
+                                        @else <span class="text-blue-600">Kopīgs uzdevums</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                <span class="px-2 py-1 text-xs rounded
+                                      {{ $task->status === 'pabeigts' ? 'bg-green-100 text-green-800' : 'bg-gray-100' }}">
+                                    {{ $task->status }}
+                                </span>
+                            </div>
+
+                            <div class="mt-2">
+                                <div><strong>Progres:</strong> {{ $done }} / {{ $orderQty }} ({{ $pct }}%)</div>
+                                <div class="w-full h-2 bg-gray-200 rounded mt-1">
+                                    <div class="h-2 bg-green-500 rounded" style="width: {{ $pct }}%"></div>
+                                </div>
+                            </div>
+
+                            @if ($byUser->isNotEmpty())
+                                <div class="mt-2">
+                                    <strong>Strādāja:</strong>
+                                    <ul class="list-disc ml-5 text-sm mt-1">
+                                        @foreach ($byUser as $row)
+                                            <li>{{ $row['name'] }} — {{ $row['total'] }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
                             @endif
-                        </p>
-                        <p><strong>Statuss:</strong> {{ $task->status }}</p>
-                        @if ($task->done_amount)
-                            <p><strong>Izpildīts daudzums:</strong> {{ $task->done_amount }} no {{ $production->order->daudzums }}</p>
-                        @endif
-                    </div>
-                @endforeach
+                        </div>
+                    @empty
+                        <p>Šai ražošanai nav uzdevumu.</p>
+                    @endforelse
+                </div>
             </div>
 
         </div>

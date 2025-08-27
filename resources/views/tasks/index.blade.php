@@ -82,31 +82,32 @@
                     <p><strong>Prioritāte:</strong> {{ $task->production->order->prioritāte }}</p>
                     <p><strong>Izpildes datums:</strong> {{ $task->production->order->izpildes_datums }}</p>
 
+                    {{-- Future tasks are read-only here --}}
                     <p class="mt-2 text-gray-600">
                         Izpildītais daudzums: {{ $task->done_amount ?? 0 }} no {{ $task->production->order->daudzums }}
                     </p>
                 </div>
             @empty
-                <p>Nav nākamo uzdevumu.</p>
+                <p>Nav gaidāmu uzdevumu.</p>
             @endforelse
         </div>
     </div>
-</x-app-layout>
 
-{{-- JS for toggling done_amount input --}}
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.status-select').forEach(select => {
-        select.addEventListener('change', (e) => {
-            const taskId = e.target.dataset.taskId;
-            const input = document.querySelector(`.done-input[data-task-id="${taskId}"]`);
-            if (e.target.value === 'daļēji pabeigts') {
-                input.style.display = 'inline-block';
-            } else {
-                input.style.display = 'none';
-                input.value = ''; // only clear if not partially done
-            }
+    {{-- Toggle logic for the "done amount" input --}}
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.status-select').forEach(select => {
+            select.addEventListener('change', (e) => {
+                const taskId = e.target.dataset.taskId;
+                const input = document.querySelector(`.done-input[data-task-id="${taskId}"]`);
+                if (e.target.value === 'daļēji pabeigts') {
+                    input.style.display = 'inline-block';
+                } else {
+                    input.style.display = 'none';
+                    input.value = ''; // only clear if not partially done
+                }
+            });
         });
     });
-});
-</script>
+    </script>
+</x-app-layout>

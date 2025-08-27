@@ -68,10 +68,18 @@ class ProductionController extends Controller
         return redirect()->route('productions.index')->with('success', 'Ražošana izveidota veiksmīgi.');
     }
 
-    public function show(Production $production)
+     public function show(Production $production)
     {
-        $production->load('order', 'tasks.process', 'tasks.user');
-        return view('productions.show', compact('production'));
+            $production->load([
+            'order',
+            'tasks.process',
+            'tasks.user',
+            'tasks.workLogs.user',
+        ]);
+
+        $allTasks = $production->tasks->sortBy('process_id');
+
+        return view('productions.show', compact('production', 'allTasks'));
     }
 
     public function destroy(Production $production)

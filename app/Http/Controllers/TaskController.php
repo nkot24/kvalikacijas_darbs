@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Task;
 use App\Models\Production;
 use App\Models\Order;
+use App\Models\TaskWorkLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -14,32 +15,35 @@ class TaskController extends Controller
     {
         $user = auth()->user();
 
-        // Tasks assigned directly to the user
+        // 1) Tasks assigned directly to the user (exclude finished here)
         $personalTasks = Task::with(['process', 'production.order'])
             ->where('user_id', $user->id)
+            ->where('status', '!=', 'pabeigts')   // <= add this line
             ->get();
 
-        // Shared tasks (user_id is null), but the current user is part of the process
-        $sharedTasks = Task::with(['process', 'production.order'])
+        // 2) Shared tasks this user can work on (exclude finished here)
+        $sharedTasks = Task::with(['process.users', 'production.order'])
             ->whereNull('user_id')
+            ->where('status', '!=', 'pabeigts')   // <= add this line
             ->get()
             ->filter(function ($task) use ($user) {
-                return $task->process->users->contains('id', $user->id);
+                return $task->process && $task->process->users->contains('id', $user->id);
             });
 
         // Combine both task types
         $allTasks = $personalTasks->concat($sharedTasks);
 
         $currentTasks = collect();
-        $futureTasks = collect();
+        $futureTasks  = collect();
 
+        // Group by production and decide which process is "unlocked" (first not fully done)
         $tasksByProduction = $allTasks->groupBy('production_id');
 
         foreach ($tasksByProduction as $groupedTasks) {
-            $productionId = $groupedTasks->first()->production_id;
+            $productionId          = $groupedTasks->first()->production_id;
             $allTasksForProduction = Task::where('production_id', $productionId)->get();
 
-            $processIds = $allTasksForProduction->pluck('process_id')->unique()->sort()->values();
+            $processIds        = $allTasksForProduction->pluck('process_id')->unique()->sort()->values();
             $unlockedProcessId = null;
 
             foreach ($processIds as $processId) {
@@ -60,9 +64,10 @@ class TaskController extends Controller
             }
         }
 
+        // Same variables your ZIP view expects
         return view('tasks.index', [
             'currentTasks' => $currentTasks,
-            'futureTasks' => $futureTasks,
+            'futureTasks'  => $futureTasks,
         ]);
     }
 
@@ -70,9 +75,10 @@ class TaskController extends Controller
     {
         $user = auth()->user();
 
+        // Same authorization logic as your ZIP
         if (
-            $task->user_id !== null && $task->user_id !== $user->id ||
-            $task->user_id === null && !$task->process->users->contains($user)
+            ($task->user_id !== null && $task->user_id !== $user->id) ||
+            ($task->user_id === null && (!$task->process || !$task->process->users->contains($user)))
         ) {
             abort(403, 'Unauthorized action.');
         }
@@ -84,53 +90,69 @@ class TaskController extends Controller
     {
         $user = auth()->user();
 
+        // Same authorization logic as your ZIP
         if (
-            $task->user_id !== null && $task->user_id !== $user->id ||
-            $task->user_id === null && !$task->process->users->contains($user)
+            ($task->user_id !== null && $task->user_id !== $user->id) ||
+            ($task->user_id === null && (!$task->process || !$task->process->users->contains($user)))
         ) {
             abort(403, 'Unauthorized');
         }
 
         $validated = $request->validate([
-            'status' => 'required|string|in:nav uzsākts,daļēji pabeigts,pabeigts',
+            'status'      => 'required|string|in:nav uzsākts,daļēji pabeigts,pabeigts',
             'done_amount' => 'nullable|integer|min:0',
         ]);
 
-        // Claim shared task
-        if ($task->user_id === null) {
-            $task->user_id = $user->id;
-        }
+        // IMPORTANT: Do NOT "claim" shared tasks anymore.
+        // (Removed the block that set $task->user_id = $user->id when null.)
 
-        // Increment done_amount instead of overwriting
+        // Compute new total & possible promotion to "pabeigts"
+        $orderQty    = (int) data_get($task, 'production.order.daudzums', 0);
+        $oldDone     = (int) ($task->done_amount ?? 0);
+        $newDone     = $oldDone;
+        $finalStatus = $validated['status'];
+
         if ($validated['status'] === 'pabeigts') {
-            $newDone = $task->production->order->daudzums;
-        } elseif ($validated['status'] === 'daļēji pabeigts') {
-            $inputDone = (int)($validated['done_amount'] ?? 0);
-            $newDone = ($task->done_amount ?? 0) + $inputDone;
-            if ($newDone >= $task->production->order->daudzums) {
-                $newDone = $task->production->order->daudzums;
-                $validated['status'] = 'pabeigts';
+            if ($orderQty > 0) {
+                $newDone = $orderQty;
             }
-        } else {
+        } elseif ($validated['status'] === 'daļēji pabeigts') {
+            $inputDone = (int) ($validated['done_amount'] ?? 0);
+            if ($inputDone <= 0) {
+                return back()->withErrors(['done_amount' => 'Lūdzu norādi, cik daudz izdarīji šajā atjauninājumā.']);
+            }
+            $newDone = $orderQty > 0 ? min($orderQty, $oldDone + $inputDone) : ($oldDone + $inputDone);
+
+            if ($orderQty > 0 && $newDone >= $orderQty) {
+                $newDone     = $orderQty;
+                $finalStatus = 'pabeigts';
+            }
+        } else { // 'nav uzsākts'
             $newDone = 0;
         }
 
-        $task->update([
-            'status' => $validated['status'],
-            'done_amount' => $newDone,
-        ]);
+        // Persist (status may have been promoted)
+        $task->status      = $finalStatus;
+        $task->done_amount = $newDone;
+        $task->save();
 
-        // Check if production is fully done
+        // Per-user work log (delta), but task stays shared (user_id remains null)
+        $delta = max(0, $newDone - $oldDone);
+        if ($delta > 0) {
+            TaskWorkLog::create([
+                'task_id' => $task->id,
+                'user_id' => $user->id,
+                'amount'  => $delta,
+            ]);
+        }
+
+        
+
+        // Finish production when no tasks remain
         $production = Production::with('tasks')->find($task->production_id);
         if ($production) {
-            $highestProcessId = $production->tasks->max('process_id');
-            $highestProcessTasks = $production->tasks->where('process_id', $highestProcessId);
-
-            $allDone = $highestProcessTasks->every(fn($t) => $t->status === 'pabeigts');
-
-            if ($allDone) {
-                $order = Order::find($production->order_id);
-                if ($order) {
+            if ($production->tasks()->count() === 0) {
+                if ($order = Order::find($production->order_id)) {
                     $order->update(['statuss' => 'pabeigts']);
                 }
                 $production->delete();
@@ -139,5 +161,4 @@ class TaskController extends Controller
 
         return redirect()->route('tasks.index')->with('success', 'Uzdevums atjaunināts veiksmīgi.');
     }
-
 }
