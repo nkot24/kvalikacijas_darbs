@@ -46,12 +46,26 @@
                                 </option>
                             </select>
 
-                            {{-- Done amount input --}}
+                            {{-- Done amount input (existing) --}}
                             <input type="number" name="done_amount" min="0"
                                    placeholder="Paveiktais daudzums (gab.)"
                                    class="done-input border rounded px-2 py-1"
                                    data-task-id="{{ $task->id }}"
                                    style="{{ $task->status == 'daļēji pabeigts' ? '' : 'display:none' }}">
+
+                            {{-- NEW: Spent time (minutes) — required for daļēji pabeigts/pabeigts --}}
+                            <input type="number" name="spent_time" min="1"
+                                   placeholder="Pavadītais laiks (min)"
+                                   class="spent-input border rounded px-2 py-1"
+                                   data-task-id="{{ $task->id }}"
+                                   style="{{ in_array($task->status, ['daļēji pabeigts','pabeigts']) ? '' : 'display:none' }}">
+
+                            {{-- NEW: Comment — optional --}}
+                            <input type="text" name="comment"
+                                   placeholder="Komentārs (neobligāts)"
+                                   class="comment-input border rounded px-2 py-1"
+                                   data-task-id="{{ $task->id }}"
+                                   style="{{ in_array($task->status, ['daļēji pabeigts','pabeigts']) ? '' : 'display:none' }}">
 
                             <button type="submit"
                                     class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
@@ -93,20 +107,43 @@
         </div>
     </div>
 
-    {{-- Toggle logic for the "done amount" input --}}
+    {{-- Toggle logic for the inputs --}}
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.status-select').forEach(select => {
-            select.addEventListener('change', (e) => {
-                const taskId = e.target.dataset.taskId;
-                const input = document.querySelector(`.done-input[data-task-id="${taskId}"]`);
-                if (e.target.value === 'daļēji pabeigts') {
-                    input.style.display = 'inline-block';
-                } else {
-                    input.style.display = 'none';
-                    input.value = ''; // only clear if not partially done
+            const taskId = select.dataset.taskId;
+            const doneInput   = document.querySelector(`.done-input[data-task-id="${taskId}"]`);
+            const spentInput  = document.querySelector(`.spent-input[data-task-id="${taskId}"]`);
+            const commentInput= document.querySelector(`.comment-input[data-task-id="${taskId}"]`);
+
+            function updateVisibility() {
+                const v = select.value;
+
+                // Show done_amount only for "daļēji pabeigts"
+                if (doneInput) {
+                    const showDone = (v === 'daļēji pabeigts');
+                    doneInput.style.display = showDone ? 'inline-block' : 'none';
+                    if (!showDone) doneInput.value = '';
                 }
-            });
+
+                // Show spent_time + comment for "daļēji pabeigts" or "pabeigts"
+                const needTimeAndComment = (v === 'daļēji pabeigts' || v === 'pabeigts');
+
+                if (spentInput) {
+                    spentInput.style.display = needTimeAndComment ? 'inline-block' : 'none';
+                    spentInput.required = needTimeAndComment;   // <-- required when shown
+                    if (!needTimeAndComment) spentInput.value = '';
+                }
+
+                if (commentInput) {
+                    commentInput.style.display = needTimeAndComment ? 'inline-block' : 'none';
+                    // comment is optional; no required flag
+                    if (!needTimeAndComment) commentInput.value = '';
+                }
+            }
+
+            select.addEventListener('change', updateVisibility);
+            updateVisibility(); // init on load
         });
     });
     </script>

@@ -10,6 +10,8 @@ use App\Http\Controllers\ProcessController;
 use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\AvansaRekinsController;
+use App\Http\Controllers\ProcessProgressController;
+
 
 Route::get('/', function () {
     return view('/auth/login');
@@ -43,6 +45,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/avansa-rekini/get-orders', [AvansaRekinsController::class, 'getOrders'])->name('avansa_rekini.getOrders');
     Route::post('/avansa-rekini/generate', [AvansaRekinsController::class, 'generate'])->name('avansa_rekini.generate');
     Route::get('/api/orders/by-client/{client_id}', [AvansaRekinsController::class, 'getOrders']);
+    Route::post('/process-progress', [ProcessProgressController::class, 'store'])->name('process-progress.store');
+    Route::put('/process-progress/{progress}', [ProcessProgressController::class, 'update'])->name('process-progress.update');
+    Route::delete('/process-progress/{progress}', [ProcessProgressController::class, 'destroy'])->name('process-progress.destroy');
 
     
 

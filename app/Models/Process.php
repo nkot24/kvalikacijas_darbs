@@ -17,4 +17,8 @@ class Process extends Model
     {
         return $this->belongsToMany(User::class);
     }
+    public function progress()
+    {
+        return $this->hasMany(ProcessProgress::class, 'process_id');
+    }
 }

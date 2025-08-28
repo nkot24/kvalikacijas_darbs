@@ -26,7 +26,7 @@
             </div>
         </div>
 
-        {{-- NEW: Procesu progress for this order's ražošana --}}
+        {{-- Procesu progress --}}
         <div class="max-w-4xl mx-auto mt-6 bg-white shadow-sm rounded-lg p-6">
             <h3 class="text-lg font-semibold mb-3">Procesi</h3>
 
@@ -39,7 +39,6 @@
             @else
                 @php
                     $orderQty = (int) ($order->daudzums ?? 0);
-                    // Make sure controller eager-loaded: production.tasks.process, .user, .workLogs.user
                     $tasks = $production->tasks->sortBy('process_id');
                 @endphp
 
@@ -48,13 +47,39 @@
                         $done = (int) ($task->done_amount ?? 0);
                         $pct  = $orderQty > 0 ? round(($done / $orderQty) * 100) : 0;
 
+                        // Per-user totals from work logs (keep user id)
                         $byUser = $task->workLogs
                             ->groupBy('user_id')
-                            ->map(fn($logs) => [
-                                'name'  => optional($logs->first()->user)->name ?? 'Nezināms',
-                                'total' => $logs->sum('amount'),
-                            ])
+                            ->map(function ($logs, $uid) {
+                                return [
+                                    'id'    => $uid,
+                                    'name'  => optional($logs->first()->user)->name ?? 'Nezināms',
+                                    'total' => $logs->sum('amount'),
+                                ];
+                            })
                             ->sortByDesc('total');
+
+                        // Pull ONLY progress for this task
+                        $progressForTask = collect();
+                        if ($task->process) {
+                            $progressForTask = $task->process
+                                ->progress()
+                                ->where('task_id', $task->id)  // <-- key filter
+                                ->get();
+                        }
+
+                        // Latest ProcessProgress per user (for time/comment display)
+                        $progressByUser = $progressForTask
+                            ->sortByDesc('created_at')
+                            ->groupBy('user_id')
+                            ->map->first();
+
+                        // Sum ONLY for users we actually list in "Strādāja"
+                        $displayUserIds = $byUser->pluck('id')->filter()->all();
+                        $totalSpent = collect($displayUserIds)
+                            ->map(fn($uid) => optional($progressByUser->get($uid))->spent_time)
+                            ->filter(fn($v) => !is_null($v))
+                            ->sum();
                     @endphp
 
                     <div class="border-b py-3 {{ $task->status === 'pabeigts' ? 'opacity-90' : '' }}">
@@ -86,9 +111,24 @@
                                 <strong>Strādāja:</strong>
                                 <ul class="list-disc ml-5 text-sm mt-1">
                                     @foreach ($byUser as $row)
-                                        <li>{{ $row['name'] }} — {{ $row['total'] }}</li>
+                                        @php $lp = $progressByUser->get($row['id'] ?? null); @endphp
+                                        <li>
+                                            {{ $row['name'] }} — {{ $row['total'] }}
+                                            @if($lp && !is_null($lp->spent_time))
+                                                — Pavadītais laiks: {{ $lp->spent_time }} min
+                                            @endif
+                                            @if($lp && !empty($lp->comment))
+                                                — Komentārs: {{ $lp->comment }}
+                                            @endif
+                                        </li>
                                     @endforeach
                                 </ul>
+
+                                @if($totalSpent > 0)
+                                    <p class="mt-2 text-sm">
+                                        <strong>Kopējais darba laiks:</strong> {{ $totalSpent }} min
+                                    </p>
+                                @endif
                             </div>
                         @endif
                     </div>

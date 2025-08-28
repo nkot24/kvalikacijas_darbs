@@ -6,6 +6,7 @@ use App\Models\Task;
 use App\Models\Production;
 use App\Models\Order;
 use App\Models\TaskWorkLog;
+use App\Models\ProcessProgress; // <-- ADDED
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -146,7 +147,28 @@ class TaskController extends Controller
             ]);
         }
 
-        
+        /* ====================== ADDED BLOCK ====================== */
+        // If user marks the task as partially or fully done, require time and log progress
+        if (in_array($finalStatus, ['daļēji pabeigts', 'pabeigts'], true)) {
+            // Validate time + optional comment (kept separate so your original $validated stays unchanged)
+            $request->validate([
+                'spent_time' => 'required|integer|min:1',   // required for these statuses
+                'comment'    => 'nullable|string|max:2000',
+            ], [
+                'spent_time.required' => 'Lūdzu ievadiet pavadīto laiku (minūtēs).',
+            ]);
+
+            // Write a process progress row so views can show pavadītais laiks + komentārs
+            ProcessProgress::create([
+                'task_id'    => $task->id,
+                'process_id' => $task->process_id,
+                'user_id'    => $user->id,
+                'status'     => $finalStatus,                       // keep same wording with spaces
+                'spent_time' => (int) $request->input('spent_time'),
+                'comment'    => $request->input('comment'),
+            ]);
+        }
+        /* ==================== / END ADDED BLOCK ====================== */
 
         // Finish production when no tasks remain
         $production = Production::with('tasks')->find($task->production_id);
