@@ -11,7 +11,7 @@
             @forelse ($currentTasks as $task)
                 <div class="border p-4 rounded mb-4">
                     <h4 class="font-bold">
-                        {{ optional($task->production->order->product)->nosaukums ?? $task->production->order->produkts}}
+                        {{ optional($task->production->order->product)->nosaukums ?? $task->production->order->produkts }}
                         @if ($task->user_id === null)
                             <span class="ml-2 text-sm text-blue-600">(Kopīgs uzdevums)</span>
                         @endif
@@ -26,6 +26,36 @@
                     <p class="mt-2 text-green-700 font-semibold">
                         Izpildītais daudzums: {{ $task->done_amount ?? 0 }} no {{ $task->production->order->daudzums }}
                     </p>
+
+                    {{-- Files attached to THIS TASK (not the process) --}}
+                    @php
+                        // If you eager-loaded 'files', this will not cause extra queries:
+                        $files = $task->relationLoaded('files')
+                                ? $task->files->sortByDesc('id')
+                                : $task->files()->latest()->get();
+                    @endphp
+                    <div class="mt-3">
+                        <h5 class="font-semibold text-sm text-gray-800 mb-1">Faili</h5>
+                        @if ($files->isEmpty())
+                            <p class="text-sm text-gray-500">Nav pievienotu failu.</p>
+                        @else
+                            <ul class="text-sm space-y-1">
+                                @foreach ($files as $f)
+                                    <li class="flex items-center gap-2">
+                                        📎
+                                        <a href="{{ route('process-files.view', $f) }}" target="_blank" class="text-indigo-600 hover:underline">
+                                            {{ $f->original_name }}
+                                        </a>
+                                        <span class="text-gray-500">({{ round(($f->size ?? 0)/1024, 1) }} KB)</span>
+                                        <a href="{{ route('process-files.download', $f) }}" class="ml-2 text-indigo-600 hover:underline">
+                                            Lejupielādēt
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+                    </div>
+                    {{-- /Files --}}
 
                     {{-- Update form --}}
                     <form action="{{ route('tasks.update', $task) }}" method="POST" class="mt-4 task-form">
@@ -46,21 +76,21 @@
                                 </option>
                             </select>
 
-                            {{-- Done amount input (existing) --}}
+                            {{-- Done amount input (only for daļēji pabeigts) --}}
                             <input type="number" name="done_amount" min="0"
                                    placeholder="Paveiktais daudzums (gab.)"
                                    class="done-input border rounded px-2 py-1"
                                    data-task-id="{{ $task->id }}"
                                    style="{{ $task->status == 'daļēji pabeigts' ? '' : 'display:none' }}">
 
-                            {{-- NEW: Spent time (minutes) — required for daļēji pabeigts/pabeigts --}}
+                            {{-- Spent time (minutes) — required for daļēji pabeigts/pabeigts --}}
                             <input type="number" name="spent_time" min="1"
                                    placeholder="Pavadītais laiks (min)"
                                    class="spent-input border rounded px-2 py-1"
                                    data-task-id="{{ $task->id }}"
                                    style="{{ in_array($task->status, ['daļēji pabeigts','pabeigts']) ? '' : 'display:none' }}">
 
-                            {{-- NEW: Comment — optional --}}
+                            {{-- Comment — optional --}}
                             <input type="text" name="comment"
                                    placeholder="Komentārs (neobligāts)"
                                    class="comment-input border rounded px-2 py-1"
@@ -96,10 +126,39 @@
                     <p><strong>Prioritāte:</strong> {{ $task->production->order->prioritāte }}</p>
                     <p><strong>Izpildes datums:</strong> {{ $task->production->order->izpildes_datums }}</p>
 
-                    {{-- Future tasks are read-only here --}}
+                    {{-- Read-only progress --}}
                     <p class="mt-2 text-gray-600">
                         Izpildītais daudzums: {{ $task->done_amount ?? 0 }} no {{ $task->production->order->daudzums }}
                     </p>
+
+                    {{-- Files attached to THIS TASK (read-only list) --}}
+                    @php
+                        $files = $task->relationLoaded('files')
+                                ? $task->files->sortByDesc('id')
+                                : $task->files()->latest()->get();
+                    @endphp
+                    <div class="mt-3">
+                        <h5 class="font-semibold text-sm text-gray-800 mb-1">Faili</h5>
+                        @if ($files->isEmpty())
+                            <p class="text-sm text-gray-500">Nav pievienotu failu.</p>
+                        @else
+                            <ul class="text-sm space-y-1">
+                                @foreach ($files as $f)
+                                    <li class="flex items-center gap-2">
+                                        📎
+                                        <a href="{{ route('process-files.view', $f) }}" target="_blank" class="text-indigo-600 hover:underline">
+                                            {{ $f->original_name }}
+                                        </a>
+                                        <span class="text-gray-500">({{ round(($f->size ?? 0)/1024, 1) }} KB)</span>
+                                        <a href="{{ route('process-files.download', $f) }}" class="ml-2 text-indigo-600 hover:underline">
+                                            Lejupielādēt
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+                    </div>
+                    {{-- /Files --}}
                 </div>
             @empty
                 <p>Nav gaidāmu uzdevumu.</p>
@@ -112,9 +171,9 @@
     document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.status-select').forEach(select => {
             const taskId = select.dataset.taskId;
-            const doneInput   = document.querySelector(`.done-input[data-task-id="${taskId}"]`);
-            const spentInput  = document.querySelector(`.spent-input[data-task-id="${taskId}"]`);
-            const commentInput= document.querySelector(`.comment-input[data-task-id="${taskId}"]`);
+            const doneInput    = document.querySelector(`.done-input[data-task-id="${taskId}"]`);
+            const spentInput   = document.querySelector(`.spent-input[data-task-id="${taskId}"]`);
+            const commentInput = document.querySelector(`.comment-input[data-task-id="${taskId}"]`);
 
             function updateVisibility() {
                 const v = select.value;
@@ -131,13 +190,13 @@
 
                 if (spentInput) {
                     spentInput.style.display = needTimeAndComment ? 'inline-block' : 'none';
-                    spentInput.required = needTimeAndComment;   // <-- required when shown
+                    spentInput.required = needTimeAndComment;   // required when shown
                     if (!needTimeAndComment) spentInput.value = '';
                 }
 
                 if (commentInput) {
                     commentInput.style.display = needTimeAndComment ? 'inline-block' : 'none';
-                    // comment is optional; no required flag
+                    // comment is optional
                     if (!needTimeAndComment) commentInput.value = '';
                 }
             }

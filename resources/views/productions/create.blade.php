@@ -8,7 +8,8 @@
     <div class="py-6">
         <div class="max-w-4xl mx-auto bg-white p-6 rounded shadow">
 
-            <form action="{{ route('productions.store') }}" method="POST">
+            {{-- ⚠️ Important: enctype="multipart/form-data" for file uploads --}}
+            <form action="{{ route('productions.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
 
                 {{-- Order Selection --}}
@@ -18,7 +19,6 @@
                     </label>
 
                     @php
-                        // Get selected order_id from query param (if present)
                         $selectedOrderId = request()->get('order_id');
                     @endphp
 
@@ -60,6 +60,16 @@
                             <p class="text-sm text-gray-500 mt-1">
                                 Ja neizvēlēsieties nevienu darbinieku, uzdevums tiks piešķirts visiem šī procesa darbiniekiem.
                             </p>
+
+                            {{-- File upload --}}
+                            <label class="block text-sm mt-3 mb-1">
+                                Pievienot failus šim procesam:
+                            </label>
+                            <input type="file"
+                                   name="process_files[{{ $process->id }}][]"
+                                   multiple
+                                   class="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:bg-indigo-600 file:text-white hover:file:bg-indigo-700"/>
+                            <p class="text-xs text-gray-500 mt-1">Varat augšupielādēt vairākus failus.</p>
                         </div>
                     @endforeach
                 </div>

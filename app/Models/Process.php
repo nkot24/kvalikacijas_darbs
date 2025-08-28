@@ -21,4 +21,9 @@ class Process extends Model
     {
         return $this->hasMany(ProcessProgress::class, 'process_id');
     }
+    public function files()
+    {
+        return $this->hasMany(ProcessFile::class);
+    }
+
 }

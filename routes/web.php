@@ -11,6 +11,7 @@ use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\AvansaRekinsController;
 use App\Http\Controllers\ProcessProgressController;
+use App\Http\Controllers\ProcessFileController;
 
 
 Route::get('/', function () {
@@ -48,6 +49,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/process-progress', [ProcessProgressController::class, 'store'])->name('process-progress.store');
     Route::put('/process-progress/{progress}', [ProcessProgressController::class, 'update'])->name('process-progress.update');
     Route::delete('/process-progress/{progress}', [ProcessProgressController::class, 'destroy'])->name('process-progress.destroy');
+    Route::post('/process-files', [ProcessFileController::class, 'store'])->name('process-files.store');
+    Route::get('/process-files/{file}/download', [ProcessFileController::class, 'download'])->name('process-files.download');
+    Route::get('/process-files/{file}/view',     [ProcessFileController::class, 'view'])->name('process-files.view');
+    Route::delete('/process-files/{file}',       [ProcessFileController::class, 'destroy'])->name('process-files.destroy');
 
     
 

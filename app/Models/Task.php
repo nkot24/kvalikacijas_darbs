@@ -40,5 +40,9 @@ class Task extends Model
     {
         return $this->hasMany(TaskWorkLog::class);
     }
+    public function files()
+    {
+        return $this->hasMany(ProcessFile::class);
+    }
 }
 
