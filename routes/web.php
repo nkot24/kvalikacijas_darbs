@@ -12,6 +12,7 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\AvansaRekinsController;
 use App\Http\Controllers\ProcessProgressController;
 use App\Http\Controllers\ProcessFileController;
+use App\Http\Controllers\OrderListController;
 
 
 Route::get('/', function () {
@@ -53,6 +54,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/process-files/{file}/download', [ProcessFileController::class, 'download'])->name('process-files.download');
     Route::get('/process-files/{file}/view',     [ProcessFileController::class, 'view'])->name('process-files.view');
     Route::delete('/process-files/{file}',       [ProcessFileController::class, 'destroy'])->name('process-files.destroy');
+    Route::resource('orderList', OrderListController::class);
+
 
     
 

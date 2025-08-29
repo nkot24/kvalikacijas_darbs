@@ -40,6 +40,9 @@
                                     <x-dropdown-link :href="route('avansa_rekini.create')" :active="request()->routeIs('avansa_rekini.*')">
                                         {{ __('Avansa rēķins') }}
                                     </x-dropdown-link>
+                                    <x-dropdown-link :href="route('orderList.index')" :active="request()->routeIs('orderList.*')">
+                                        {{ __('Iepirkuma saraksts') }}
+                                    </x-dropdown-link>
                                 </x-slot>
                             </x-dropdown>
 
@@ -162,6 +165,9 @@
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('avansa_rekini.create')" :active="request()->routeIs('avansa_rekini.*')">
                         {{ __('Avansa rēķins') }}
+                    </x-responsive-nav-link>
+                     <x-responsive-nav-link :href="route('orderList.index')" :active="request()->routeIs('orderList.*')">
+                        {{ __('Iepirkuma saraksts') }}
                     </x-responsive-nav-link>
                 </div>
 
