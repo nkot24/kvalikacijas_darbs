@@ -55,6 +55,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/process-files/{file}/view',     [ProcessFileController::class, 'view'])->name('process-files.view');
     Route::delete('/process-files/{file}',       [ProcessFileController::class, 'destroy'])->name('process-files.destroy');
     Route::resource('orderList', OrderListController::class);
+    Route::get('/order-list/completed', [OrderListController::class, 'completed'])->name('orderList.completed');
 
 
     
