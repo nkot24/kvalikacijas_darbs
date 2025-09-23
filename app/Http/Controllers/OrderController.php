@@ -15,7 +15,7 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $orders = Order::with(['client', 'product'])->latest()->get();
-        $query = Order::with(['client', 'product']);
+        $query = Order::with(['client', 'product'])->where('statuss', '!=', 'pabeigts');
 
         // Search
         if ($search = $request->input('search')) {
@@ -48,6 +48,35 @@ class OrderController extends Controller
 
         return view('orders.index', compact('orders'));
         }
+    public function complete(Request $request)
+    {
+        $query = Order::with(['client', 'product'])
+            ->where('statuss', 'pabeigts');
+
+        // Optional sorting
+        if ($sort = $request->input('sort')) {
+            $direction = $request->input('direction', 'asc');
+            $query->orderBy($sort, $direction);
+        } else {
+            $query->latest();
+        }
+
+        // Optional searching
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('pasutijuma_numurs', 'like', "%$search%")
+                    ->orWhere('klients', 'like', "%$search%")
+                    ->orWhereHas('client', fn($q) => $q->where('nosaukums', 'like', "%$search%"))
+                    ->orWhereHas('product', fn($q) => $q->where('nosaukums', 'like', "%$search%"));
+            });
+        }
+
+        $orders = $query->paginate(15)->appends($request->all());
+
+        return view('orders.complete', compact('orders'));
+    }
+
+
 
     public function create()
     {

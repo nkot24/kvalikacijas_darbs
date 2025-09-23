@@ -61,6 +61,9 @@
                                     <x-dropdown-link :href="route('orderList.completed')" :active="request()->routeIs('orderList.*')">
                                         {{ __('Izpildītie iepirkumi') }}
                                     </x-dropdown-link>
+                                    <x-dropdown-link :href="route('orders.complete')" :active="request()->routeIs('orders.*')">
+                                        {{ __('Izpildītie pasūtījumi') }}
+                                    </x-dropdown-link>
                                 </x-slot>
                             </x-dropdown>
 
@@ -171,6 +174,9 @@
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('orderList.completed')" :active="request()->routeIs('orderList.*')">
                         {{ __('Izpildītie iepirkumi') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('orders.complete')" :active="request()->routeIs('orders.*')">
+                        {{ __('Izpildītie pasūtījumi') }}
                     </x-responsive-nav-link>
                 </div>
 

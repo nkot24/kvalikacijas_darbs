@@ -32,9 +32,10 @@ Route::middleware('auth')->group(function () {
     Route::post('users/import', [UserController::class, 'import'])->name('users.import');
     Route::get('/orders/export', [OrderController::class, 'fullExport'])->name('orders.fullExport');
     Route::post('/orders/import', [OrderController::class, 'fullImport'])->name('orders.fullImport');
-
+    Route::get('/orders/complete', [OrderController::class, 'complete'])->name('orders.complete');
     Route::resource('orders', OrderController::class);
-    Route::get('/orders/{order}/print', [OrderController::class, 'print'])->name('orders.print'); // print sheet
+    Route::get('/orders/{order}/print', [OrderController::class, 'print'])->name('orders.print');
+   
     Route::resource('clients', ClientController::class);
     Route::resource('products', ProductController::class);
     Route::resource('users', UserController::class);
