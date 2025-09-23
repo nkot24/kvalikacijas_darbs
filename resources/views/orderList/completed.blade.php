@@ -14,10 +14,27 @@
             @endif
 
             <div class="bg-white shadow-sm rounded-lg p-6">
-                <div class="mb-6 px-[100px]">
-                    <a href="{{ route('orderList.index') }}" class="px-4 py-2 bg-gray-100 text-gray-800 rounded hover:bg-gray-200">
-                        ← Atpakaļ uz aktīvajiem
-                    </a>
+                <div class="px-[100px]">
+                    <div class="flex items-center justify-between gap-4 flex-wrap mb-4">
+                        <a href="{{ route('orderList.index') }}" class="px-4 py-2 bg-gray-100 text-gray-800 rounded hover:bg-gray-200">
+                            ← Atpakaļ uz aktīvajiem
+                        </a>
+                    </div>
+
+                    <!-- Meklēšana tikai pēc Nosaukuma / Piegādātāja -->
+                    <form method="GET" action="{{ route('orderList.completed') }}" class="mb-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-4 gap-3">
+                            <div class="lg:col-span-3">
+                                <label class="block text-xs text-gray-600 mb-1">Meklēt (Nosaukums / Piegādātājs)</label>
+                                <input type="text" name="q" value="{{ $q ?? '' }}" placeholder="piem., skrūves vai Būvniecības SIA"
+                                       class="w-full border rounded p-2">
+                            </div>
+                            <div class="flex items-end gap-3">
+                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Meklēt</button>
+                                <a href="{{ route('orderList.completed') }}" class="px-4 py-2 bg-gray-100 text-gray-800 rounded hover:bg-gray-200">Notīrīt</a>
+                            </div>
+                        </div>
+                    </form>
                 </div>
 
                 <div class="overflow-x-auto px-[100px]">
@@ -29,7 +46,7 @@
                                 <th class="border px-3 py-2">Foto</th>
                                 <th class="border px-3 py-2">Statuss</th>
                                 <th class="border px-3 py-2">Izveidoja</th>
-                                <th class="border px-3 py-2">Piegādātājs</th> <!-- NEW -->
+                                <th class="border px-3 py-2">Piegādātājs</th>
                                 <th class="border px-3 py-2">Kad pasūtīts</th>
                                 <th class="border px-3 py-2">Kad jāatnāk</th>
                                 <th class="border px-3 py-2">Kad atnāca</th>
@@ -54,7 +71,7 @@
                                         <span class="px-2 py-1 rounded text-xs bg-green-100 text-green-800">{{ $order->status }}</span>
                                     </td>
                                     <td class="border px-3 py-2">{{ optional($order->creator)->name ?? '—' }}</td>
-                                    <td class="border px-3 py-2">{{ $order->supplier_name ?? '—' }}</td> <!-- NEW -->
+                                    <td class="border px-3 py-2">{{ $order->supplier_name ?? '—' }}</td>
                                     <td class="border px-3 py-2">{{ $order->ordered_at?->format('Y-m-d') ?? '—' }}</td>
                                     <td class="border px-3 py-2">{{ $order->expected_at?->format('Y-m-d') ?? '—' }}</td>
                                     <td class="border px-3 py-2 font-semibold">{{ $order->arrived_at?->format('Y-m-d') ?? '—' }}</td>
@@ -69,7 +86,7 @@
                                     </td>
                                 </tr>
                             @empty
-                                <tr><td colspan="10" class="text-center py-4">Nav izpildītu iepirkumu.</td></tr> <!-- colspan updated -->
+                                <tr><td colspan="10" class="text-center py-4">Nav izpildītu iepirkumu.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
