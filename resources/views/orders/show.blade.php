@@ -6,6 +6,7 @@
     </x-slot>
 
     <div class="py-6">
+        {{-- Pasūtījuma informācija --}}
         <div class="max-w-4xl mx-auto bg-white shadow-sm rounded-lg p-6 space-y-4">
             <div><strong>Datums:</strong> {{ optional($order->datums)->format('d.m.Y H:i') ?? $order->datums }}</div>
             <div><strong>Klients:</strong> {{ $order->client->nosaukums ?? $order->klients }}</div>
@@ -31,6 +32,7 @@
             <h3 class="text-lg font-semibold mb-3">Procesi</h3>
 
             @php
+                /** @var \App\Models\Production|null $production */
                 $production = $order->production ?? null;
             @endphp
 
@@ -38,6 +40,14 @@
                 <p>Šim pasūtījumam vēl nav izveidota ražošana.</p>
             @else
                 @php
+                    // Eager-load everything we show (avoids N+1)
+                    $production->load([
+                        'tasks.process',
+                        'tasks.user',
+                        'tasks.workLogs.user',
+                        'tasks.files',
+                    ]);
+
                     $orderQty = (int) ($order->daudzums ?? 0);
                     $tasks = $production->tasks->sortBy('process_id');
                 @endphp
@@ -59,12 +69,12 @@
                             })
                             ->sortByDesc('total');
 
-                        // Pull ONLY progress for this task
+                        // Pull ONLY progress for this task (if you have process->progress relation)
                         $progressForTask = collect();
-                        if ($task->process) {
+                        if ($task->process && method_exists($task->process, 'progress')) {
                             $progressForTask = $task->process
                                 ->progress()
-                                ->where('task_id', $task->id)  // <-- key filter
+                                ->where('task_id', $task->id)
                                 ->get();
                         }
 
@@ -105,6 +115,35 @@
                                 <div class="h-2 bg-green-500 rounded" style="width: {{ $pct }}%"></div>
                             </div>
                         </div>
+
+                        {{-- Faili pie uzdevuma --}}
+                        @if ($task->files->isNotEmpty())
+                            <div class="mt-2">
+                                <strong>Faili:</strong>
+                                <ul class="list-disc ml-5 text-sm mt-1">
+                                    @foreach ($task->files as $file)
+                                        <li class="flex items-center gap-2">
+                                            {{-- View link (prefer controller route if exists, fallback to /storage) --}}
+                                            @if (Route::has('process-files.view'))
+                                                <a href="{{ route('process-files.view', $file) }}"
+                                                   target="_blank"
+                                                   class="text-indigo-600 hover:underline">
+                                                    {{ $file->original_name ?? basename($file->path) }}
+                                                </a>
+                                            @else
+                                                <a href="{{ asset('storage/'.$file->path) }}"
+                                                   target="_blank"
+                                                   class="text-indigo-600 hover:underline">
+                                                    {{ $file->original_name ?? basename($file->path) }}
+                                                </a>
+                                            @endif
+
+                                            
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
 
                         @if ($byUser->isNotEmpty())
                             <div class="mt-2">

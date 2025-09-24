@@ -20,6 +20,14 @@
                     <p>Izpildes datums: {{ $production->order->izpildes_datums }}</p>
                     <p><strong>Piezīmes:</strong> {{ $production->order->piezimes ?? '-' }}</p>
                     <a href="{{ route('productions.show', $production) }}" class="text-blue-600 hover:underline">Skatīt progresu</a>
+                    <a href="{{ route('productions.edit', $production) }}" class=" text-yellow-600 hover:underline">Labot</a>
+                    <form action="{{ route('productions.destroy', $production) }}" method="POST" class="inline">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="text-red-600 hover:underline"
+                                onclick="return confirm('Vai tiešām vēlaties dzēst šo ražošanu?')">Dzēst</button>
+                    </form>
+
                 </div>
             @endforeach
         </div>

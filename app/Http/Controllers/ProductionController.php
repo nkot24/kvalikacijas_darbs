@@ -10,14 +10,19 @@ use App\Models\Task;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ProductionController extends Controller
 {
     public function index()
     {
-        $productions = Production::with('order', 'tasks')->get();
+        $productions = Production::active()
+            ->with(['order', 'tasks'])
+            ->get();
+
         return view('productions.index', compact('productions'));
     }
+
 
     public function create()
     {
@@ -151,6 +156,164 @@ class ProductionController extends Controller
         $allTasks = $production->tasks->sortBy('process_id');
 
         return view('productions.show', compact('production', 'allTasks'));
+    }
+
+    /**
+     * EDIT production
+     */
+    public function edit(Production $production)
+    {
+        $orders = Order::where('statuss', 'nav nodots ražošanai')
+            ->orWhere('id', $production->order_id) // allow current order to remain selectable
+            ->get();
+
+        $processes = Process::with('users')->get();
+
+        // Preselect processes used in this production
+        $selectedProcessIds = $production->tasks()
+            ->pluck('process_id')->unique()->toArray();
+
+        // Preselect users per process (only those tasks that have a user)
+        $selectedUsersByProcess = $production->tasks()
+            ->select('process_id', 'user_id')
+            ->whereNotNull('user_id')
+            ->get()
+            ->groupBy('process_id')
+            ->map(fn($grp) => $grp->pluck('user_id')->unique()->values()->toArray())
+            ->toArray();
+
+        return view('productions.edit', [
+            'production'             => $production->load('order'),
+            'orders'                 => $orders,
+            'processes'              => $processes,
+            'selectedProcessIds'     => $selectedProcessIds,
+            'selectedUsersByProcess' => $selectedUsersByProcess,
+        ]);
+    }
+
+    /**
+     * UPDATE production
+     */
+    public function update(Request $request, Production $production)
+    {
+        $validated = $request->validate([
+            'order_id'          => ['required', 'integer', 'exists:orders,id'],
+            'process_ids'       => ['required', 'array', 'min:1'],
+            'process_ids.*'     => ['integer', 'exists:processes,id'],
+
+            'users'             => ['nullable', 'array'],
+            'users.*'           => ['nullable', 'array'],
+            'users.*.*'         => ['nullable', 'integer', 'exists:users,id'],
+
+            'process_files'     => ['nullable', 'array'],
+            'process_files.*'   => ['nullable', 'array'],
+            'process_files.*.*' => ['nullable', 'file', 'max:102400'], // 100MB
+        ], [
+            'process_ids.required'  => 'Izvēlieties vismaz vienu procesu.',
+            'process_files.*.*.max' => 'Fails ir pārāk liels (maks. 100MB).',
+        ]);
+
+        DB::transaction(function () use ($production, $validated, $request) {
+            // 1) Update linked order
+            $production->update([
+                'order_id' => (int) $validated['order_id'],
+            ]);
+
+            $selectedProcessIds = collect($validated['process_ids'])
+                ->map(fn($v) => (int) $v)->unique()->values();
+
+            // Current processes in production (by tasks)
+            $currentProcessIds = $production->tasks()->pluck('process_id')->unique();
+
+            // 2) Remove tasks/files for processes that were unchecked
+            $toRemove = $currentProcessIds->diff($selectedProcessIds);
+            if ($toRemove->isNotEmpty()) {
+                $tasksToRemove = $production->tasks()->whereIn('process_id', $toRemove)->get();
+                foreach ($tasksToRemove as $task) {
+                    foreach ($task->files as $file) {
+                        try {
+                            Storage::disk('public')->delete($file->path);
+                        } catch (\Throwable $e) {
+                            // ignore storage errors
+                        }
+                        $file->delete();
+                    }
+                    $task->delete();
+                }
+            }
+
+            // 3) Ensure tasks for selected processes match assigned users
+            foreach ($selectedProcessIds as $processId) {
+                $userIds = collect(data_get($validated, "users.$processId", []))
+                    ->filter()->map(fn($v) => (int) $v)->unique()->values();
+
+                $existingTasks = $production->tasks()->where('process_id', $processId)->get();
+
+                if ($userIds->isEmpty()) {
+                    // exactly one unassigned task
+                    if (!($existingTasks->count() == 1 && $existingTasks->first()->user_id === null)) {
+                        foreach ($existingTasks as $t) { $t->delete(); }
+                        $production->tasks()->create([
+                            'process_id'  => $processId,
+                            'user_id'     => null,
+                            'status'      => 'nav uzsākts',
+                            'done_amount' => 0,
+                        ]);
+                    }
+                } else {
+                    // one task per selected user
+                    foreach ($existingTasks as $t) {
+                        if ($t->user_id === null || !$userIds->contains($t->user_id)) {
+                            $t->delete();
+                        }
+                    }
+
+                    $currentUserIds = $production->tasks()
+                        ->where('process_id', $processId)
+                        ->pluck('user_id')->filter()->values();
+
+                    $toCreate = $userIds->diff($currentUserIds);
+                    foreach ($toCreate as $uid) {
+                        $production->tasks()->create([
+                            'process_id'  => $processId,
+                            'user_id'     => $uid,
+                            'status'      => 'nav uzsākts',
+                            'done_amount' => 0,
+                        ]);
+                    }
+                }
+
+                // 4) Optional: new files for this process → attach to all its tasks
+                if ($request->hasFile("process_files.$processId")) {
+                    $tasksForProcess = $production->tasks()->where('process_id', $processId)->get();
+
+                    foreach ((array) $request->file("process_files.$processId") as $file) {
+                        if (!$file) continue;
+
+                        $storedPath = $file->store(
+                            "process_files/production_{$production->id}/process_{$processId}",
+                            'public'
+                        );
+
+                        foreach ($tasksForProcess as $task) {
+                            ProcessFile::create([
+                                'process_id'    => (int) $processId,
+                                'task_id'       => (int) $task->id,
+                                'uploaded_by'   => optional($request->user())->id,
+                                'original_name' => $file->getClientOriginalName(),
+                                'path'          => $storedPath,
+                                'mime'          => $file->getClientMimeType(),
+                                'size'          => $file->getSize(),
+                            ]);
+                        }
+                    }
+                }
+            }
+        });
+
+        return redirect()
+            ->route('productions.show', $production)
+            ->with('success', 'Ražošana atjaunināta.');
     }
 
     public function destroy(Production $production)
