@@ -29,6 +29,26 @@
                             </option>
                         @endforeach
                     </select>
+                    @error('order_id')
+                        <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                {{-- Global files (applies to all selected processes) --}}
+                <div class="mb-6">
+                    <label class="block font-semibold mb-2">
+                        Pievienot failus visiem izvēlētajiem procesiem:
+                    </label>
+                    <input type="file"
+                           name="global_files[]"
+                           multiple
+                           class="block w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded file:border-0 file:bg-indigo-600 file:text-white hover:file:bg-indigo-700"/>
+                    <p class="text-xs text-gray-500 mt-1">
+                        Šie faili tiks pievienoti visiem izvēlētajiem procesiem.
+                    </p>
+                    @error('global_files.*')
+                        <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 {{-- Processes and Users --}}
@@ -61,7 +81,7 @@
                                 Ja neizvēlēsieties nevienu darbinieku, uzdevums tiks piešķirts visiem šī procesa darbiniekiem.
                             </p>
 
-                            {{-- File upload --}}
+                            {{-- File upload for this process --}}
                             <label class="block text-sm mt-3 mb-1">
                                 Pievienot failus šim procesam:
                             </label>
@@ -72,6 +92,13 @@
                             <p class="text-xs text-gray-500 mt-1">Varat augšupielādēt vairākus failus.</p>
                         </div>
                     @endforeach
+
+                    @error('process_ids')
+                        <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                    @enderror
+                    @error('process_files.*.*')
+                        <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 {{-- Submit button --}}

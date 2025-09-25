@@ -23,7 +23,6 @@ class ProductionController extends Controller
         return view('productions.index', compact('productions'));
     }
 
-
     public function create()
     {
         $orders    = Order::where('statuss', 'nav nodots ražošanai')->get();
@@ -48,9 +47,14 @@ class ProductionController extends Controller
             'process_files'     => ['nullable', 'array'],
             'process_files.*'   => ['nullable', 'array'],
             'process_files.*.*' => ['nullable', 'file', 'max:102400'], // 100 MB
+
+            // NEW: global files
+            'global_files'      => ['nullable', 'array'],
+            'global_files.*'    => ['nullable', 'file', 'max:102400'], // 100 MB
         ], [
             'process_ids.required'  => 'Izvēlieties vismaz vienu procesu.',
             'process_files.*.*.max' => 'Fails ir pārāk liels (maks. 100MB).',
+            'global_files.*.max'    => 'Fails ir pārāk liels (maks. 100MB).',
         ]);
 
         DB::beginTransaction();
@@ -87,7 +91,7 @@ class ProductionController extends Controller
                 }
             }
 
-            // 3) Save uploaded files (store once, link to all tasks of that process)
+            // 3) Save uploaded files (per-process): store once, link to all tasks of that process
             foreach ($validated['process_ids'] as $processId) {
                 $processId = (int) $processId;
 
@@ -97,20 +101,49 @@ class ProductionController extends Controller
                         ->get();
 
                     foreach ((array) $request->file("process_files.$processId") as $file) {
-                        if (!$file) {
-                            continue;
-                        }
+                        if (!$file) continue;
 
-                        // Store once under production/process folder
                         $storedPath = $file->store(
                             "process_files/production_{$production->id}/process_{$processId}",
                             'public'
                         );
 
-                        // Create a row for each task (scope by task_id)
                         foreach ($tasksForProcess as $task) {
                             ProcessFile::create([
                                 'process_id'    => $processId,
+                                'task_id'       => (int) $task->id,
+                                'uploaded_by'   => auth()->id(),
+                                'original_name' => $file->getClientOriginalName(),
+                                'path'          => $storedPath,
+                                'mime'          => $file->getClientMimeType(),
+                                'size'          => $file->getSize(),
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            // 3b) NEW: Global files → attach to ALL selected processes' tasks
+            if ($request->hasFile('global_files')) {
+                $allTasksForSelectedProcesses = $production->tasks()
+                    ->whereIn('process_id', $validated['process_ids'])
+                    ->get()
+                    ->groupBy('process_id');
+
+                foreach ((array) $request->file('global_files') as $file) {
+                    if (!$file) continue;
+
+                    // Store once under production/global
+                    $storedPath = $file->store(
+                        "process_files/production_{$production->id}/global",
+                        'public'
+                    );
+
+                    // Create a ProcessFile row for every task across all selected processes
+                    foreach ($allTasksForSelectedProcesses as $processId => $tasks) {
+                        foreach ($tasks as $task) {
+                            ProcessFile::create([
+                                'process_id'    => (int) $processId,
                                 'task_id'       => (int) $task->id,
                                 'uploaded_by'   => auth()->id(),
                                 'original_name' => $file->getClientOriginalName(),
@@ -161,13 +194,21 @@ class ProductionController extends Controller
     /**
      * EDIT production
      */
-    public function edit(Production $production)
+   public function edit(Production $production)
     {
         $orders = Order::where('statuss', 'nav nodots ražošanai')
             ->orWhere('id', $production->order_id) // allow current order to remain selectable
             ->get();
 
         $processes = Process::with('users')->get();
+
+        // Eager-load tasks + files (+ process) so the view can show existing files
+        $production->load([
+            'order',
+            'tasks.files',
+            'tasks.process',
+            // 'tasks.user', // only if you need it in the edit view
+        ]);
 
         // Preselect processes used in this production
         $selectedProcessIds = $production->tasks()
@@ -183,7 +224,7 @@ class ProductionController extends Controller
             ->toArray();
 
         return view('productions.edit', [
-            'production'             => $production->load('order'),
+            'production'             => $production,
             'orders'                 => $orders,
             'processes'              => $processes,
             'selectedProcessIds'     => $selectedProcessIds,
@@ -208,9 +249,14 @@ class ProductionController extends Controller
             'process_files'     => ['nullable', 'array'],
             'process_files.*'   => ['nullable', 'array'],
             'process_files.*.*' => ['nullable', 'file', 'max:102400'], // 100MB
+
+            // NEW: global files
+            'global_files'      => ['nullable', 'array'],
+            'global_files.*'    => ['nullable', 'file', 'max:102400'], // 100 MB
         ], [
             'process_ids.required'  => 'Izvēlieties vismaz vienu procesu.',
             'process_files.*.*.max' => 'Fails ir pārāk liels (maks. 100MB).',
+            'global_files.*.max'    => 'Fails ir pārāk liels (maks. 100MB).',
         ]);
 
         DB::transaction(function () use ($production, $validated, $request) {
@@ -264,6 +310,13 @@ class ProductionController extends Controller
                     // one task per selected user
                     foreach ($existingTasks as $t) {
                         if ($t->user_id === null || !$userIds->contains($t->user_id)) {
+                            // delete tasks that don't match desired assignment
+                            foreach ($t->files as $file) {
+                                try {
+                                    Storage::disk('public')->delete($file->path);
+                                } catch (\Throwable $e) { /* ignore */ }
+                                $file->delete();
+                            }
                             $t->delete();
                         }
                     }
@@ -309,6 +362,37 @@ class ProductionController extends Controller
                     }
                 }
             }
+
+            // 4b) NEW: Global files on update → attach to ALL currently selected processes' tasks
+            if ($request->hasFile('global_files')) {
+                $allTasksForSelectedProcesses = $production->tasks()
+                    ->whereIn('process_id', $selectedProcessIds)
+                    ->get()
+                    ->groupBy('process_id');
+
+                foreach ((array) $request->file('global_files') as $file) {
+                    if (!$file) continue;
+
+                    $storedPath = $file->store(
+                        "process_files/production_{$production->id}/global",
+                        'public'
+                    );
+
+                    foreach ($allTasksForSelectedProcesses as $processId => $tasks) {
+                        foreach ($tasks as $task) {
+                            ProcessFile::create([
+                                'process_id'    => (int) $processId,
+                                'task_id'       => (int) $task->id,
+                                'uploaded_by'   => optional($request->user())->id,
+                                'original_name' => $file->getClientOriginalName(),
+                                'path'          => $storedPath,
+                                'mime'          => $file->getClientMimeType(),
+                                'size'          => $file->getSize(),
+                            ]);
+                        }
+                    }
+                }
+            }
         });
 
         return redirect()
@@ -318,6 +402,13 @@ class ProductionController extends Controller
 
     public function destroy(Production $production)
     {
+        // Optional: delete stored files for this production
+        try {
+            Storage::disk('public')->deleteDirectory("process_files/production_{$production->id}");
+        } catch (\Throwable $e) {
+            // ignore storage errors
+        }
+
         $production->delete();
         return redirect()->route('productions.index')->with('success', 'Ražošana dzēsta.');
     }

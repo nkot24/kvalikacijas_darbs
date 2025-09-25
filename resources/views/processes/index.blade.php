@@ -7,7 +7,6 @@
 
     <div class="py-6">
         <div class="max-w-full mx-auto">
-
             @if (session('success'))
                 <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mx-[100px] mb-4" role="alert">
                     <strong class="font-bold">Veiksmīgi!</strong>
@@ -16,7 +15,6 @@
             @endif
 
             <div class="bg-white shadow-sm rounded-lg p-6">
-
                 <!-- Add Process Button -->
                 <div class="mb-6 px-[100px]">
                     <a href="{{ route('processes.create') }}"
@@ -51,12 +49,36 @@
                                         @endforelse
                                     </td>
                                     <td class="border px-4 py-2 space-y-2">
-                                        <a href="{{ route('processes.edit', $process) }}" class="text-blue-600 hover:underline block">Rediģēt</a>
-                                        <form action="{{ route('processes.destroy', $process) }}" method="POST" onsubmit="return confirm('Vai tiešām vēlaties dzēst šo procesu?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:underline">Dzēst</button>
-                                        </form>
+                                        <!-- ▲ / ▼ (no new routes; uses processes.update) -->
+                                        <div class="flex items-center gap-2">
+                                            <!-- UP -->
+                                            <form action="{{ route('processes.update', $process) }}" method="POST" class="inline">
+                                                @csrf
+                                                @method('PATCH')
+                                                <input type="hidden" name="swap" value="up">
+                                                <button type="submit"
+                                                    class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                                                    title="Pārvietot uz augšu">▲</button>
+                                            </form>
+
+                                            <!-- DOWN -->
+                                            <form action="{{ route('processes.update', $process) }}" method="POST" class="inline">
+                                                @csrf
+                                                @method('PATCH')
+                                                <input type="hidden" name="swap" value="down">
+                                                <button type="submit"
+                                                    class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                                                    title="Pārvietot uz leju">▼</button>
+                                            </form>
+                                            <a href="{{ route('processes.edit', $process) }}" class="text-blue-600 hover:underline block">Rediģēt</a>
+                                            <form action="{{ route('processes.destroy', $process) }}" method="POST" onsubmit="return confirm('Vai tiešām vēlaties dzēst šo procesu?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-red-600 hover:underline">Dzēst</button>
+                                            </form>
+                                        </div>
+
+                                        
                                     </td>
                                 </tr>
                             @empty
