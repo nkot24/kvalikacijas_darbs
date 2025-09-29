@@ -81,6 +81,7 @@
                                 <td class="border px-4 py-2">{{ $order->piezimes ?? '-' }}</td>
                                 <td class="border px-4 py-2 flex justify-center flex-wrap gap-3 text-2xl">
                                     <a href="{{ route('orders.show', $order) }}" class="text-blue-600 hover:scale-110 transition-transform" title="Skatīt">👁️</a>
+                                    <a href="{{ route('orders.edit', $order) }}" class="text-blue-600 hover:scale-110 transition-transform" title="Rediģēt">✏️</a>
                                     <a href="{{ route('orders.print', $order) }}" target="_blank" class="text-purple-600 hover:scale-110 transition-transform" title="Izprintēt">🖨️</a>
                                 </td>
                             </tr>
