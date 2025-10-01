@@ -5,41 +5,116 @@
         </h2>
     </x-slot>
 
+    {{-- Alpine.js (remove if already included) --}}
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
     <div class="py-6">
         <div class="max-w-4xl mx-auto bg-white p-6 shadow-md rounded">
             <form action="{{ route('orders.store') }}" method="POST">
                 @csrf
 
-                {{-- Klients --}}
+                {{-- Klients (searchable select) --}}
                 <div class="mb-4">
                     <label class="block mb-1 font-semibold">Izvēlieties klientu</label>
-                    <select name="client_id" id="client_id" class="w-full border rounded px-3 py-2">
-                        <option value="">-- Nav atlasīts --</option>
-                        <option value="vienreizējs">Vienreizējs klients</option>
-                        @foreach ($clients as $client)
-                            <option value="{{ $client->id }}">{{ $client->nosaukums }}</option>
-                        @endforeach
-                    </select>
+
+                    <div class="relative w-full"
+                         x-data='selectBox({
+                            name: "client_id",
+                            placeholder: "-- Nav atlasīts --",
+                            options: [
+                                { value: "", label: "-- Nav atlasīts --" },
+                                { value: "vienreizējs", label: "Vienreizējs klients" },
+                                @foreach ($clients as $c)
+                                    { value: "{{ $c->id }}", label: @json($c->nosaukums) },
+                                @endforeach
+                            ],
+                            onChange: (v) => toggleOneTimeClient(v)
+                         })'>
+                        <input type="text"
+                               x-model="search"
+                               @focus="open = true"
+                               @click="open = true"
+                               @keydown.arrow-down.prevent="move(1)"
+                               @keydown.arrow-up.prevent="move(-1)"
+                               @keydown.enter.prevent="choose(activeIndex)"
+                               @keydown.escape="open = false"
+                               @click.outside="open = false"
+                               :placeholder="placeholder"
+                               class="w-full border rounded px-3 py-2"
+                               autocomplete="off">
+                        <input type="hidden" :name="name" :value="value">
+                        <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500">▾</span>
+
+                        <ul x-show="open"
+                            x-transition
+                            @mousedown.prevent
+                            class="absolute left-0 right-0 z-20 mt-1 bg-white border rounded shadow max-h-60 overflow-auto">
+                            <template x-for="(opt, i) in filtered" :key="opt.value">
+                                <li @click="choose(i)"
+                                    @mouseenter="activeIndex = i"
+                                    :class="i === activeIndex ? 'bg-blue-50' : ''"
+                                    class="px-3 py-2 cursor-pointer"
+                                    x-text="opt.label"></li>
+                            </template>
+                            <li x-show="filtered.length === 0" class="px-3 py-2 text-slate-500">Nav rezultātu…</li>
+                        </ul>
+                    </div>
                 </div>
 
-                <div class="mb-4" id="one_time_client_div" style="display: none;">
+                <div class="mb-4" id="one_time_client_div" style="display:none;">
                     <label class="block mb-1 font-semibold">Vienreizējs klienta nosaukums</label>
                     <input type="text" name="klients" class="w-full border rounded px-3 py-2" placeholder="Piem. Jauns Klients">
                 </div>
 
-                {{-- Produkts --}}
+                {{-- Produkts (searchable select) --}}
                 <div class="mb-4">
                     <label class="block mb-1 font-semibold">Izvēlieties produktu</label>
-                    <select name="products_id" id="products_id" class="w-full border rounded px-3 py-2">
-                        <option value="">-- Nav atlasīts --</option>
-                        <option value="vienreizējs">Vienreizējs produkts</option>
-                        @foreach ($products as $product)
-                            <option value="{{ $product->id }}">{{ $product->nosaukums }}</option>
-                        @endforeach
-                    </select>
+
+                    <div class="relative w-full"
+                         x-data='selectBox({
+                            name: "products_id",
+                            placeholder: "-- Nav atlasīts --",
+                            options: [
+                                { value: "", label: "-- Nav atlasīts --" },
+                                { value: "vienreizējs", label: "Vienreizējs produkts" },
+                                @foreach ($products as $p)
+                                    { value: "{{ $p->id }}", label: @json($p->nosaukums) },
+                                @endforeach
+                            ],
+                            onChange: (v) => toggleOneTimeProduct(v)
+                         })'>
+                        <input type="text"
+                               x-model="search"
+                               @focus="open = true"
+                               @click="open = true"
+                               @keydown.arrow-down.prevent="move(1)"
+                               @keydown.arrow-up.prevent="move(-1)"
+                               @keydown.enter.prevent="choose(activeIndex)"
+                               @keydown.escape="open = false"
+                               @click.outside="open = false"
+                               :placeholder="placeholder"
+                               class="w-full border rounded px-3 py-2"
+                               autocomplete="off">
+                        <input type="hidden" :name="name" :value="value">
+                        <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500">▾</span>
+
+                        <ul x-show="open"
+                            x-transition
+                            @mousedown.prevent
+                            class="absolute left-0 right-0 z-20 mt-1 bg-white border rounded shadow max-h-60 overflow-auto">
+                            <template x-for="(opt, i) in filtered" :key="opt.value">
+                                <li @click="choose(i)"
+                                    @mouseenter="activeIndex = i"
+                                    :class="i === activeIndex ? 'bg-blue-50' : ''"
+                                    class="px-3 py-2 cursor-pointer"
+                                    x-text="opt.label"></li>
+                            </template>
+                            <li x-show="filtered.length === 0" class="px-3 py-2 text-slate-500">Nav rezultātu…</li>
+                        </ul>
+                    </div>
                 </div>
 
-                <div class="mb-4" id="one_time_product_div" style="display: none;">
+                <div class="mb-4" id="one_time_product_div" style="display:none;">
                     <label class="block mb-1 font-semibold">Vienreizējs produkta nosaukums</label>
                     <input type="text" name="produkts" class="w-full border rounded px-3 py-2">
                 </div>
@@ -72,7 +147,6 @@
                     <textarea name="piezimes" class="w-full border rounded px-3 py-2"></textarea>
                 </div>
 
-                {{-- Saglabāt --}}
                 <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
                     Saglabāt pasūtījumu
                 </button>
@@ -80,29 +154,36 @@
         </div>
     </div>
 
-    {{-- Script for toggling one-time fields --}}
     <script>
-        const clientSelect = document.getElementById('client_id');
-        const oneTimeClientDiv = document.getElementById('one_time_client_div');
+        // Toggle "vienreizējs" fields
+        function toggleOneTimeClient(v){ document.getElementById('one_time_client_div').style.display = (v==='vienreizējs')?'block':'none'; }
+        function toggleOneTimeProduct(v){ document.getElementById('one_time_product_div').style.display = (v==='vienreizējs')?'block':'none'; }
 
-        const productSelect = document.getElementById('products_id');
-        const oneTimeProductDiv = document.getElementById('one_time_product_div');
-
-        function toggleOneTimeClient() {
-            oneTimeClientDiv.style.display = clientSelect.value === 'vienreizējs' ? 'block' : 'none';
+        // Minimal reusable searchable select
+        function selectBox({ name, options, onChange, placeholder = '' }) {
+            return {
+                name, options, onChange, placeholder,
+                open: false,
+                search: '',
+                value: '',
+                activeIndex: 0,
+                get filtered(){
+                    const q = this.search.toLowerCase().trim();
+                    return q ? this.options.filter(o => o.label.toLowerCase().includes(q)) : this.options;
+                },
+                move(step){
+                    if(!this.open) this.open = true;
+                    const max = this.filtered.length - 1;
+                    this.activeIndex = Math.min(Math.max(this.activeIndex + step, 0), max);
+                },
+                choose(i){
+                    const opt = this.filtered[i]; if(!opt) return;
+                    this.value = opt.value;
+                    this.search = opt.label;   // show label in the text field
+                    this.open = false;
+                    if (this.onChange) this.onChange(this.value);
+                }
+            }
         }
-
-        function toggleOneTimeProduct() {
-            oneTimeProductDiv.style.display = productSelect.value === 'vienreizējs' ? 'block' : 'none';
-        }
-
-        clientSelect.addEventListener('change', toggleOneTimeClient);
-        productSelect.addEventListener('change', toggleOneTimeProduct);
-
-        // On page load
-        window.addEventListener('DOMContentLoaded', function () {
-            toggleOneTimeClient();
-            toggleOneTimeProduct();
-        });
     </script>
 </x-app-layout>
