@@ -64,7 +64,7 @@
                                 return [
                                     'id'    => $uid,
                                     'name'  => optional($logs->first()->user)->name ?? 'Nezināms',
-                                    'total' => $logs->sum('amount'),
+                                    'total' => (int) $logs->sum('amount'),
                                 ];
                             })
                             ->sortByDesc('total');
@@ -78,16 +78,29 @@
                                 ->get();
                         }
 
-                        // Latest ProcessProgress per user (for time/comment display)
+                        /**
+                         * FIX: Aggregate minutes across ALL entries per user,
+                         * but keep the latest row for comment/status display.
+                         * We attach "aggregated_spent_time" to that latest row.
+                         */
                         $progressByUser = $progressForTask
-                            ->sortByDesc('created_at')
                             ->groupBy('user_id')
-                            ->map->first();
+                            ->map(function ($rows) {
+                                $latest = $rows->sortByDesc('created_at')->first();
+                                $sumMin = $rows
+                                    ->whereNotNull('spent_time')
+                                    ->sum(function ($r) { return (int) $r->spent_time; });
+
+                                // attach aggregate to the latest row object for convenient access
+                                $latest->aggregated_spent_time = $sumMin;
+
+                                return $latest;
+                            });
 
                         // Sum ONLY for users we actually list in "Strādāja"
                         $displayUserIds = $byUser->pluck('id')->filter()->all();
                         $totalSpent = collect($displayUserIds)
-                            ->map(fn($uid) => optional($progressByUser->get($uid))->spent_time)
+                            ->map(fn($uid) => optional($progressByUser->get($uid))->aggregated_spent_time)
                             ->filter(fn($v) => !is_null($v))
                             ->sum();
                     @endphp
@@ -137,8 +150,6 @@
                                                     {{ $file->original_name ?? basename($file->path) }}
                                                 </a>
                                             @endif
-
-                                            
                                         </li>
                                     @endforeach
                                 </ul>
@@ -153,8 +164,8 @@
                                         @php $lp = $progressByUser->get($row['id'] ?? null); @endphp
                                         <li>
                                             {{ $row['name'] }} — {{ $row['total'] }}
-                                            @if($lp && !is_null($lp->spent_time))
-                                                — Pavadītais laiks: {{ $lp->spent_time }} min
+                                            @if($lp && !is_null($lp->aggregated_spent_time))
+                                                — Pavadītais laiks: {{ (int) $lp->aggregated_spent_time }} min
                                             @endif
                                             @if($lp && !empty($lp->comment))
                                                 — Komentārs: {{ $lp->comment }}
@@ -165,7 +176,7 @@
 
                                 @if($totalSpent > 0)
                                     <p class="mt-2 text-sm">
-                                        <strong>Kopējais darba laiks:</strong> {{ $totalSpent }} min
+                                        <strong>Kopējais darba laiks:</strong> {{ (int) $totalSpent }} min
                                     </p>
                                 @endif
                             </div>

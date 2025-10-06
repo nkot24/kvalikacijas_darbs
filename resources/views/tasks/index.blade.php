@@ -29,7 +29,6 @@
 
                     {{-- Files attached to THIS TASK (not the process) --}}
                     @php
-                        // If you eager-loaded 'files', this will not cause extra queries:
                         $files = $task->relationLoaded('files')
                                 ? $task->files->sortByDesc('id')
                                 : $task->files()->latest()->get();
@@ -111,9 +110,9 @@
 
         {{-- Future Tasks --}}
         <h3 class="text-lg font-bold mb-2">Uzdevumi kas būs</h3>
-        <div class="bg-white shadow-sm rounded-lg p-6">
+        <div class="bg-white shadow-sm rounded-lg p-6 mb-6">
             @forelse ($futureTasks as $task)
-                <div class="border p-4 rounded mb-4 opacity-50">
+                <div class="border p-4 rounded mb-4">
                     <h4 class="font-bold">
                         {{ optional($task->production->order->product)->nosaukums ?? $task->production->order->produkts }}
                         @if ($task->user_id === null)
@@ -126,12 +125,12 @@
                     <p><strong>Prioritāte:</strong> {{ $task->production->order->prioritāte }}</p>
                     <p><strong>Izpildes datums:</strong> {{ $task->production->order->izpildes_datums }}</p>
 
-                    {{-- Read-only progress --}}
-                    <p class="mt-2 text-gray-600">
+                    {{-- Show progress (same as current tasks) --}}
+                    <p class="mt-2 text-green-700 font-semibold">
                         Izpildītais daudzums: {{ $task->done_amount ?? 0 }} no {{ $task->production->order->daudzums }}
                     </p>
 
-                    {{-- Files attached to THIS TASK (read-only list) --}}
+                    {{-- Files attached to THIS TASK (same as current tasks) --}}
                     @php
                         $files = $task->relationLoaded('files')
                                 ? $task->files->sortByDesc('id')
@@ -159,6 +158,53 @@
                         @endif
                     </div>
                     {{-- /Files --}}
+
+                    {{-- Update form (IDENTICAL to current tasks) --}}
+                    <form action="{{ route('tasks.update', $task) }}" method="POST" class="mt-4 task-form">
+                        @csrf
+                        @method('PUT')
+                        <div class="flex flex-col md:flex-row items-center gap-4">
+                            <label for="status">Statuss:</label>
+                            <select name="status" required class="status-select border rounded px-2 py-1"
+                                    data-task-id="{{ $task->id }}">
+                                <option value="nav uzsākts" {{ $task->status == 'nav uzsākts' ? 'selected' : '' }}>
+                                    Nav uzsākts
+                                </option>
+                                <option value="daļēji pabeigts" {{ $task->status == 'daļēji pabeigts' ? 'selected' : '' }}>
+                                    Daļēji pabeigts
+                                </option>
+                                <option value="pabeigts" {{ $task->status == 'pabeigts' ? 'selected' : '' }}>
+                                    Pabeigts
+                                </option>
+                            </select>
+
+                            {{-- Done amount input (only for daļēji pabeigts) --}}
+                            <input type="number" name="done_amount" min="0"
+                                   placeholder="Paveiktais daudzums (gab.)"
+                                   class="done-input border rounded px-2 py-1"
+                                   data-task-id="{{ $task->id }}"
+                                   style="{{ $task->status == 'daļēji pabeigts' ? '' : 'display:none' }}">
+
+                            {{-- Spent time (minutes) — required for daļēji pabeigts/pabeigts --}}
+                            <input type="number" name="spent_time" min="1"
+                                   placeholder="Pavadītais laiks (min)"
+                                   class="spent-input border rounded px-2 py-1"
+                                   data-task-id="{{ $task->id }}"
+                                   style="{{ in_array($task->status, ['daļēji pabeigts','pabeigts']) ? '' : 'display:none' }}">
+
+                            {{-- Comment — optional --}}
+                            <input type="text" name="comment"
+                                   placeholder="Komentārs (neobligāts)"
+                                   class="comment-input border rounded px-2 py-1"
+                                   data-task-id="{{ $task->id }}"
+                                   style="{{ in_array($task->status, ['daļēji pabeigts','pabeigts']) ? '' : 'display:none' }}">
+
+                            <button type="submit"
+                                    class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                                Atjaunināt
+                            </button>
+                        </div>
+                    </form>
                 </div>
             @empty
                 <p>Nav gaidāmu uzdevumu.</p>
