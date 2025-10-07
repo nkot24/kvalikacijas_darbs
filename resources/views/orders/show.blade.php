@@ -87,12 +87,12 @@
                             ->groupBy('user_id')
                             ->map(function ($rows) {
                                 $latest = $rows->sortByDesc('created_at')->first();
-                                $sumMin = $rows
+                                $sumHours = $rows
                                     ->whereNotNull('spent_time')
-                                    ->sum(function ($r) { return (int) $r->spent_time; });
+                                    ->sum('spent_time'); // sum as float
 
                                 // attach aggregate to the latest row object for convenient access
-                                $latest->aggregated_spent_time = $sumMin;
+                                $latest->aggregated_spent_time = $sumHours;
 
                                 return $latest;
                             });
@@ -165,7 +165,8 @@
                                         <li>
                                             {{ $row['name'] }} — {{ $row['total'] }}
                                             @if($lp && !is_null($lp->aggregated_spent_time))
-                                                — Pavadītais laiks: {{ (int) $lp->aggregated_spent_time }} min
+                                                — Pavadītais laiks: 
+                                                {{ rtrim(rtrim(number_format($lp->aggregated_spent_time, 2, '.', ''), '0'), '.') }} stundas
                                             @endif
                                             @if($lp && !empty($lp->comment))
                                                 — Komentārs: {{ $lp->comment }}
@@ -176,7 +177,8 @@
 
                                 @if($totalSpent > 0)
                                     <p class="mt-2 text-sm">
-                                        <strong>Kopējais darba laiks:</strong> {{ (int) $totalSpent }} min
+                                        <strong>Kopējais darba laiks:</strong>
+                                        {{ rtrim(rtrim(number_format($totalSpent, 2, '.', ''), '0'), '.') }} stundas
                                     </p>
                                 @endif
                             </div>

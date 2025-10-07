@@ -53,9 +53,18 @@
 
                             // Latest ProcessProgress per user (for time/comment display)
                             $progressByUser = $progressForTask
-                                ->sortByDesc('created_at')
                                 ->groupBy('user_id')
-                                ->map->first();
+                                ->map(function ($rows) {
+                                    $latest = $rows->sortByDesc('created_at')->first();
+                                    $sumHours = $rows
+                                        ->whereNotNull('spent_time')
+                                        ->sum('spent_time'); // sum as float
+
+                                    // attach aggregate to the latest row object for convenient access
+                                    $latest->aggregated_spent_time = $sumHours;
+
+                                    return $latest;
+                                });
 
                             // Sum ONLY for users we actually list in "Strādāja"
                             $displayUserIds = $byUser->pluck('id')->filter()->all();
@@ -63,6 +72,9 @@
                                 ->map(fn($uid) => optional($progressByUser->get($uid))->spent_time)
                                 ->filter(fn($v) => !is_null($v))
                                 ->sum();
+
+                            // Sum ALL spent_time for this task (not just latest per user)
+                            $totalSpent = $progressForTask->whereNotNull('spent_time')->sum('spent_time');
                         @endphp
 
                         <div class="border-b py-3 {{ $task->status === 'pabeigts' ? 'opacity-90' : '' }}">
@@ -97,8 +109,9 @@
                                             @php $lp = $progressByUser->get($row['id'] ?? null); @endphp
                                             <li>
                                                 {{ $row['name'] }} — {{ $row['total'] }}
-                                                @if($lp && !is_null($lp->spent_time))
-                                                    — Pavadītais laiks: {{ $lp->spent_time }} min
+                                                @if($lp && !is_null($lp->aggregated_spent_time))
+                                                    — Pavadītais laiks: 
+                                                    {{ rtrim(rtrim(number_format($lp->aggregated_spent_time, 2, '.', ''), '0'), '.') }} stundas
                                                 @endif
                                                 @if($lp && !empty($lp->comment))
                                                     — Komentārs: {{ $lp->comment }}
@@ -109,7 +122,8 @@
 
                                     @if($totalSpent > 0)
                                         <p class="mt-2 text-sm">
-                                            <strong>Kopējais darba laiks:</strong> {{ $totalSpent }} min
+                                            <strong>Kopējais darba laiks:</strong>
+                                            {{ rtrim(rtrim(number_format($totalSpent, 2, '.', ''), '0'), '.') }} stundas
                                         </p>
                                     @endif
                                 </div>

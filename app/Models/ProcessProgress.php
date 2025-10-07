@@ -22,7 +22,7 @@ class ProcessProgress extends Model
         'process_id',
         'user_id',
         'status',
-        'spent_time',   // minutes
+        'spent_time',   
         'comment',
     ];
 
@@ -30,7 +30,7 @@ class ProcessProgress extends Model
      * Casts.
      */
     protected $casts = [
-        'spent_time' => 'integer',
+        'spent_time' => 'float',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

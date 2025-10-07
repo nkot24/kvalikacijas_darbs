@@ -82,12 +82,12 @@
                                    data-task-id="{{ $task->id }}"
                                    style="{{ $task->status == 'daļēji pabeigts' ? '' : 'display:none' }}">
 
-                            {{-- Spent time (minutes) — required for daļēji pabeigts/pabeigts --}}
-                            <input type="number" name="spent_time" min="1"
-                                   placeholder="Pavadītais laiks (min)"
-                                   class="spent-input border rounded px-2 py-1"
-                                   data-task-id="{{ $task->id }}"
-                                   style="{{ in_array($task->status, ['daļēji pabeigts','pabeigts']) ? '' : 'display:none' }}">
+                            {{-- Spent time (stundas) — required for daļēji pabeigts/pabeigts --}}
+                            <input type="number" name="spent_time" min="0.01" step="0.01"
+                                    placeholder="Pavadītais laiks (stundas)"
+                                    class="spent-input border rounded px-2 py-1"
+                                    data-task-id="{{ $task->id }}"
+                                    style="{{ in_array($task->status, ['daļēji pabeigts','pabeigts']) ? '' : 'display:none' }}">
 
                             {{-- Comment — optional --}}
                             <input type="text" name="comment"
@@ -185,13 +185,12 @@
                                    data-task-id="{{ $task->id }}"
                                    style="{{ $task->status == 'daļēji pabeigts' ? '' : 'display:none' }}">
 
-                            {{-- Spent time (minutes) — required for daļēji pabeigts/pabeigts --}}
-                            <input type="number" name="spent_time" min="1"
-                                   placeholder="Pavadītais laiks (min)"
-                                   class="spent-input border rounded px-2 py-1"
-                                   data-task-id="{{ $task->id }}"
-                                   style="{{ in_array($task->status, ['daļēji pabeigts','pabeigts']) ? '' : 'display:none' }}">
-
+                            {{-- Spent time (stundas) — required for daļēji pabeigts/pabeigts --}}
+                            <input type="number" name="spent_time" min="0.01" step="0.01"
+                                    placeholder="Pavadītais laiks (stundas)"
+                                    class="spent-input border rounded px-2 py-1"
+                                    data-task-id="{{ $task->id }}"
+                                    style="{{ in_array($task->status, ['daļēji pabeigts','pabeigts']) ? '' : 'display:none' }}">
                             {{-- Comment — optional --}}
                             <input type="text" name="comment"
                                    placeholder="Komentārs (neobligāts)"

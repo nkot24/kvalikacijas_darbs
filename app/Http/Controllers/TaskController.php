@@ -150,21 +150,19 @@ class TaskController extends Controller
         /* ====================== ADDED BLOCK ====================== */
         // If user marks the task as partially or fully done, require time and log progress
         if (in_array($finalStatus, ['daļēji pabeigts', 'pabeigts'], true)) {
-            // Validate time + optional comment (kept separate so your original $validated stays unchanged)
             $request->validate([
-                'spent_time' => 'required|integer|min:1',   // required for these statuses
+                'spent_time' => 'required|numeric|min:0.01',
                 'comment'    => 'nullable|string|max:2000',
             ], [
-                'spent_time.required' => 'Lūdzu ievadiet pavadīto laiku (minūtēs).',
+                'spent_time.required' => 'Lūdzu ievadiet pavadīto laiku (stundās).',
             ]);
 
-            // Write a process progress row so views can show pavadītais laiks + komentārs
             ProcessProgress::create([
                 'task_id'    => $task->id,
                 'process_id' => $task->process_id,
                 'user_id'    => $user->id,
-                'status'     => $finalStatus,                       // keep same wording with spaces
-                'spent_time' => (int) $request->input('spent_time'),
+                'status'     => $finalStatus,
+                'spent_time' => (float) $request->input('spent_time'), // store as hours
                 'comment'    => $request->input('comment'),
             ]);
         }
