@@ -67,6 +67,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/inventory/scan', [InventoryController::class, 'scanView'])->name('inventory.scan');
     Route::post('/inventory/scan', [InventoryController::class, 'handleScan'])->name('inventory.scan.handle');
     Route::get('/inventory/storage', [InventoryController::class, 'storageView'])->name('inventory.storage');
+    Route::patch('/inventory/storage/{product}/qty', [InventoryController::class, 'updateQuantity'])->name('inventory.storage.updateQty');
 
 
     

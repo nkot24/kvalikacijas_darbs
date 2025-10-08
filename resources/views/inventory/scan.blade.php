@@ -9,9 +9,14 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <div class="grid gap-6 md:grid-cols-2">
-                    <!-- Left: Live camera -->
+                    <!-- Left: Live camera + STATUS MOVED HERE -->
                     <div>
                         <div id="reader" style="width:100%;max-width:520px;"></div>
+
+                        <!-- Status/notification now just under the camera -->
+                        <div id="result" class="mt-3 p-3 border rounded bg-gray-50 text-sm">
+                            Gatavs skenēšanai.
+                        </div>
 
                         <div class="mt-4">
                             <button id="scanBtn"
@@ -31,10 +36,6 @@
                             <input id="lastCode" type="text" class="w-full border rounded p-2 font-mono" readonly>
                         </div>
 
-                        <div id="result" class="p-3 border rounded bg-gray-50 text-sm">
-                            Gatavs skenēšanai.
-                        </div>
-
                         <form id="manualForm" class="mt-4 flex gap-2" onsubmit="return false;">
                             <input id="manualCode" type="text" class="flex-1 border rounded p-2"
                                    placeholder="Ievadiet svītrkodu manuāli (izvēles)">
@@ -52,7 +53,7 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script>
     document.addEventListener('DOMContentLoaded', async () => {
-        const resultDiv   = document.getElementById('result');
+        const resultDiv   = document.getElementById('result');  // now under the camera
         const lastCode    = document.getElementById('lastCode');
         const scanBtn     = document.getElementById('scanBtn');
         const manualBtn   = document.getElementById('manualBtn');

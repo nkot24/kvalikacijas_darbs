@@ -65,4 +65,21 @@ class InventoryController extends Controller
 
         return view('inventory.storage', compact('products','q'));
     }
+    public function updateQuantity(Request $request, \App\Models\Product $product)
+    {
+        $data = $request->validate([
+            'daudzums_noliktava' => ['required','integer','min:0'], // adjust min if negatives allowed
+        ]);
+
+        $product->update(['daudzums_noliktava' => $data['daudzums_noliktava']]);
+
+        // Return JSON for AJAX updates
+        return response()->json([
+            'ok' => true,
+            'product_id' => $product->id,
+            'daudzums_noliktava' => $product->daudzums_noliktava,
+            'message' => 'Daudzums noliktavā atjaunināts.',
+        ]);
+    }
+
 }
