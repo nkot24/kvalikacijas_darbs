@@ -43,6 +43,9 @@
                                     <x-dropdown-link :href="route('orderList.index')" :active="request()->routeIs('orderList.*')">
                                         {{ __('Iepirkuma saraksts') }}
                                     </x-dropdown-link>
+                                    <x-dropdown-link :href="route('inventory.scan')" :active="request()->routeIs('inventory.*')">
+                                        {{ __('Skenēt produktus') }}
+                                    </x-dropdown-link>
                                 </x-slot>
                             </x-dropdown>
 
@@ -183,6 +186,9 @@
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('inventory.storage')" :active="request()->routeIs('inventory.*')">
                         {{ __('Noliktava') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('inventory.scan')" :active="request()->routeIs('inventory.*')">
+                        {{ __('Skenēt produktus') }}
                     </x-responsive-nav-link>
                 </div>
 

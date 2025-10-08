@@ -41,7 +41,7 @@ class InventoryController extends Controller
                 'id' => $product->id,
                 'nosaukums' => $product->nosaukums,
                 'svitr_kods' => $product->svitr_kods,
-                'daudzums_noliktavā' => $product->daudzums_noliktava,
+                'daudzums_noliktava' => $product->daudzums_noliktava,
             ],
         ]);
     }
