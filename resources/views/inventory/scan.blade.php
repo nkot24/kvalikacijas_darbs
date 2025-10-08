@@ -11,6 +11,14 @@
                 <div class="grid gap-6 md:grid-cols-2">
                     <div>
                         <div id="reader" style="width:100%;max-width:480px;"></div>
+
+                        <!-- Camera controls -->
+                        <div class="mt-2 flex items-center gap-2">
+                            <button id="flipBtn" type="button" class="px-3 py-1 border rounded">
+                                Pārslēgt kameru
+                            </button>
+                        </div>
+
                         <p class="text-sm text-gray-500 mt-2">
                             Atļaujiet kamerai piekļuvi un novietojiet svītrkodu kadra centrā.
                         </p>
@@ -41,10 +49,16 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const resultDiv = document.getElementById('result');
-        const lastCode = document.getElementById('lastCode');
-        const manualBtn = document.getElementById('manualBtn');
-        const manualCode = document.getElementById('manualCode');
+        const resultDiv   = document.getElementById('result');
+        const lastCode    = document.getElementById('lastCode');
+        const manualBtn   = document.getElementById('manualBtn');
+        const manualCode  = document.getElementById('manualCode');
+        const flipBtn     = document.getElementById('flipBtn');
+
+        let html5QrCode   = new Html5Qrcode("reader");
+        let allCameras    = [];
+        let currentCamIdx = 0;
+        let lastAt        = 0;
 
         async function sendCode(code) {
             lastCode.value = code;
@@ -66,6 +80,7 @@
                         Svītrkods: ${data.product.svitr_kods}<br>
                         Daudzums noliktavā: ${data.product.daudzums_noliktava}
                     </div>`;
+                    if (navigator.vibrate) navigator.vibrate(40);
                 } else {
                     resultDiv.innerHTML = `<div class="text-red-700">❌ ${data.message || 'Kļūda pievienojot.'}</div>`;
                 }
@@ -79,24 +94,17 @@
             if (code) sendCode(code);
         });
 
-        const html5QrCode = new Html5Qrcode("reader");
-
-        Html5Qrcode.getCameras().then(cameras => {
-            const camId = cameras && cameras.length ? cameras[0].id : null;
-            if (!camId) {
-                resultDiv.innerHTML = '<span class="text-red-700">Kamera nav atrasta.</span>';
-                return;
-            }
-
-            html5QrCode.start(
-                camId,
+        async function startWithConstraints(constraints) {
+            return html5QrCode.start(
+                constraints,
                 {
                     fps: 10,
+                    // Landscape-ish box works better for 1D
                     qrbox: (w, h) => {
                         const size = Math.floor(Math.min(w, h) * 0.7);
-                        return { width: size, height: size };
+                        return { width: size, height: Math.floor(size * 0.55) };
                     },
-                    // IMPORTANT: enable 1D barcode formats
+                    // Support common 1D + QR formats
                     formatsToSupport: [
                         Html5QrcodeSupportedFormats.QR_CODE,
                         Html5QrcodeSupportedFormats.EAN_13,
@@ -105,20 +113,82 @@
                         Html5QrcodeSupportedFormats.CODE_39,
                         Html5QrcodeSupportedFormats.UPC_A,
                         Html5QrcodeSupportedFormats.UPC_E
-                    ]
+                    ],
+                    experimentalFeatures: { useBarCodeDetectorIfSupported: true }
                 },
                 (decodedText) => {
-                    if (decodedText && decodedText !== lastCode.value) {
+                    const now = Date.now();
+                    if (decodedText && decodedText !== lastCode.value && (now - lastAt) > 1000) {
+                        lastAt = now;
                         sendCode(decodedText);
                     }
                 },
                 () => {}
-            ).catch(err => {
+            );
+        }
+
+        async function restartCamera(constraints) {
+            try { await html5QrCode.stop(); } catch (_) {}
+            try { await html5QrCode.clear(); } catch (_) {}
+            return startWithConstraints(constraints).catch(err => {
                 resultDiv.innerHTML = '<span class="text-red-700">Neizdevās startēt kameru: ' + err + '</span>';
             });
-        }).catch(err => {
-            resultDiv.innerHTML = '<span class="text-red-700">Neizdevās piekļūt kamerai: ' + err + '</span>';
-        });
+        }
+
+        async function startPreferredCamera() {
+            // 1) Prefer back camera by facingMode on mobile
+            try {
+                await restartCamera({ facingMode: { exact: "environment" } });
+                return;
+            } catch (_) {
+                // ignore and continue to device list
+            }
+
+            // 2) Fallback: list devices and choose a likely back cam
+            try {
+                allCameras = await Html5Qrcode.getCameras();
+                if (!allCameras || !allCameras.length) {
+                    resultDiv.innerHTML = '<span class="text-red-700">Kamera nav atrasta.</span>';
+                    return;
+                }
+                const preferredIdx = allCameras.findIndex(c => /back|rear|environment/i.test(c.label || ''));
+                currentCamIdx = preferredIdx >= 0 ? preferredIdx : 0;
+
+                await restartCamera({
+                    deviceId: { exact: allCameras[currentCamIdx].id },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                    facingMode: "environment",
+                    advanced: [{ focusMode: "continuous" }]
+                });
+            } catch (err) {
+                resultDiv.innerHTML = '<span class="text-red-700">Neizdevās startēt kameru: ' + err + '</span>';
+            }
+        }
+
+        // Flip button
+        if (flipBtn) {
+            flipBtn.addEventListener('click', async () => {
+                try { await html5QrCode.stop(); } catch (_) {}
+                try { await html5QrCode.clear(); } catch (_) {}
+
+                if (!allCameras || !allCameras.length) {
+                    try { allCameras = await Html5Qrcode.getCameras(); } catch (_) {}
+                }
+                if (!allCameras || !allCameras.length) return;
+
+                currentCamIdx = (currentCamIdx + 1) % allCameras.length;
+                await restartCamera({
+                    deviceId: { exact: allCameras[currentCamIdx].id },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                    facingMode: "environment",
+                    advanced: [{ focusMode: "continuous" }]
+                });
+            });
+        }
+
+        startPreferredCamera();
     });
     </script>
 </x-app-layout>
