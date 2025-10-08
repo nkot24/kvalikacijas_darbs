@@ -5,52 +5,13 @@
         </h2>
     </x-slot>
 
-    <style>
-        /* Frame overlay style like your screenshot */
-        .scan-wrap { position: relative; width: 100%; max-width: 640px; margin: 0 auto; }
-        .scan-mask {
-            position: absolute; inset: 0;
-            display: flex; align-items: center; justify-content: center;
-            pointer-events: none;
-        }
-        .scan-box {
-            position: relative; width: 92%; aspect-ratio: 16/9;
-            box-sizing: content-box;
-        }
-        .scan-corner { position: absolute; width: 42px; height: 42px; }
-        .scan-corner.tl { top: -2px; left: -2px; border-top: 4px solid #22c55e; border-left: 4px solid #22c55e; border-top-left-radius: 6px; }
-        .scan-corner.tr { top: -2px; right: -2px; border-top: 4px solid #22c55e; border-right: 4px solid #22c55e; border-top-right-radius: 6px; }
-        .scan-corner.bl { bottom: -2px; left: -2px; border-bottom: 4px solid #22c55e; border-left: 4px solid #22c55e; border-bottom-left-radius: 6px; }
-        .scan-corner.br { bottom: -2px; right: -2px; border-bottom: 4px solid #22c55e; border-right: 4px solid #22c55e; border-bottom-right-radius: 6px; }
-        /* Dim the area outside the scan box */
-        .scan-dim {
-            position: absolute; inset: 0; background: rgba(0,0,0,0.35);
-            -webkit-mask: radial-gradient(closest-side, transparent 0 99%, black 100%) center/0 0 no-repeat;
-            mask: radial-gradient(closest-side, transparent 0 99%, black 100%) center/0 0 no-repeat;
-        }
-        /* We’ll size the “hole” with JS to match the scan-box */
-    </style>
-
     <div class="py-8">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
-                <div class="grid gap-6 md:grid-cols-2 items-start">
-                    <!-- Left: Live camera with frame -->
+                <div class="grid gap-6 md:grid-cols-2">
+                    <!-- Left: Live camera -->
                     <div>
-                        <div class="scan-wrap">
-                            <div id="reader"></div>
-
-                            <div class="scan-mask">
-                                <div id="scanBox" class="scan-box">
-                                    <span class="scan-corner tl"></span>
-                                    <span class="scan-corner tr"></span>
-                                    <span class="scan-corner bl"></span>
-                                    <span class="scan-corner br"></span>
-                                </div>
-                            </div>
-
-                            <div id="scanDim" class="scan-dim"></div>
-                        </div>
+                        <div id="reader" style="width:100%;max-width:520px;"></div>
 
                         <div class="mt-4">
                             <button id="scanBtn"
@@ -58,7 +19,7 @@
                                 SKENĒT
                             </button>
                             <p class="text-sm text-gray-500 mt-2">
-                                Kamera startējas automātiski. Nospiediet “SKENĒT” un turiet svītrkodu rāmī.
+                                Kamera startējas automātiski. Nospiediet “SKENĒT” un turiet svītrkodu kadra centrā.
                             </p>
                         </div>
                     </div>
@@ -96,22 +57,6 @@
         const scanBtn     = document.getElementById('scanBtn');
         const manualBtn   = document.getElementById('manualBtn');
         const manualCode  = document.getElementById('manualCode');
-        const scanBoxEl   = document.getElementById('scanBox');
-        const scanDimEl   = document.getElementById('scanDim');
-
-        // Size the “hole” in the dim layer to match the scan box
-        function updateDimHole() {
-            const r = scanBoxEl.getBoundingClientRect();
-            const wrap = scanDimEl.parentElement.getBoundingClientRect();
-            const cx = (r.left + r.right) / 2 - wrap.left;
-            const cy = (r.top + r.bottom) / 2 - wrap.top;
-            const rx = r.width / 2, ry = r.height / 2;
-            // Use CSS mask with a big ellipse matching the scan box
-            scanDimEl.style.webkitMask = `radial-gradient(${rx}px ${ry}px at ${cx}px ${cy}px, transparent 98%, black 100%)`;
-            scanDimEl.style.mask = scanDimEl.style.webkitMask;
-        }
-        setTimeout(updateDimHole, 300);
-        window.addEventListener('resize', () => setTimeout(updateDimHole, 200));
 
         let html5QrCode   = new Html5Qrcode("reader");
         let armed         = false;   // only scan when armed by the button
@@ -124,7 +69,10 @@
             try {
                 const res = await fetch(@json(route('inventory.scan.handle')), {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': @json(csrf_token()) },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': @json(csrf_token())
+                    },
                     body: JSON.stringify({ barcode: code })
                 });
                 const data = await res.json();
@@ -144,95 +92,65 @@
             }
         }
 
-        // Manual submit
+        // Manual submit still available
         manualBtn.addEventListener('click', () => {
             const code = manualCode.value.trim();
             sendCode(code);
         });
 
-        // Press to arm one scan
+        // Arm one scan when the button is pressed
         scanBtn.addEventListener('click', () => {
             armed = true;
-            resultDiv.textContent = 'Skenēju... Turiet svītrkodu rāmī.';
+            resultDiv.textContent = 'Skenēju... Turiet svītrkodu plašajā kadra zonā.';
             scanBtn.disabled = true;
             scanBtn.classList.add('opacity-70');
         });
 
-        // Ask camera for high resolution + autofocus; use large scan area (matches the frame)
-        const startOpts = {
-            fps: 20,
-            qrbox: () => {
-                const r = scanBoxEl.getBoundingClientRect();
-                return { width: Math.floor(r.width), height: Math.floor(r.height) };
-            },
-            formatsToSupport: [
-                Html5QrcodeSupportedFormats.EAN_13,
-                Html5QrcodeSupportedFormats.EAN_8,
-                Html5QrcodeSupportedFormats.CODE_128,
-                Html5QrcodeSupportedFormats.CODE_39,
-                Html5QrcodeSupportedFormats.UPC_A,
-                Html5QrcodeSupportedFormats.UPC_E,
-                Html5QrcodeSupportedFormats.QR_CODE
-            ],
-            experimentalFeatures: { useBarCodeDetectorIfSupported: true }
-        };
-
-        // Decoding callback (fires often; we only act when armed)
-        const onDecode = (decodedText) => {
-            const now = Date.now();
-            if (!armed) return;
-            if (!decodedText || now - lastFireAt < 700) return;
-            armed = false;
-            lastFireAt = now;
-            scanBtn.disabled = false;
-            scanBtn.classList.remove('opacity-70');
-            sendCode(decodedText);
-        };
-
-        // Enhance video track (autofocus / zoom / torch) when possible
-        async function enhanceVideoTrack() {
-            try {
-                const videoEl = document.querySelector('#reader video');
-                const track = videoEl?.srcObject?.getVideoTracks?.()[0];
-                if (!track) return;
-                const caps = track.getCapabilities?.() || {};
-                const advanced = [];
-                if (caps.focusMode?.includes('continuous')) advanced.push({ focusMode: 'continuous' });
-                if (caps.zoom) {
-                    const z = Math.min(caps.zoom.max || 1, Math.max(caps.zoom.min || 1, 1.5));
-                    advanced.push({ zoom: z });
-                }
-                if (caps.torch) advanced.push({ torch: true });
-                if (advanced.length) await track.applyConstraints({ advanced });
-            } catch(_) {}
-        }
-
-        // Start camera (prefer back + 1080p), fallback gracefully
+        // Auto-start camera with a bigger scan area
         async function startCamera() {
-            updateDimHole();
-            const hiResBack = {
-                facingMode: { exact: "environment" },
-                width:  { ideal: 1920 },
-                height: { ideal: 1080 },
-                advanced: [{ focusMode: "continuous" }]
-            };
-            const hintBack = {
-                facingMode: "environment",
-                width:  { ideal: 1920 },
-                height: { ideal: 1080 },
-                advanced: [{ focusMode: "continuous" }]
+            const startOpts = {
+                fps: 20, // smoother detection if device can handle it
+                // MUCH bigger scan area: ~95% width & 65% height of view
+                qrbox: (viewW, viewH) => {
+                    const w = Math.floor(viewW * 0.95);
+                    const h = Math.floor(viewH * 0.65);
+                    return {
+                        width: Math.min(w, viewW - 10),
+                        height: Math.min(h, viewH - 10)
+                    };
+                },
+                formatsToSupport: [
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.CODE_128,
+                    Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.UPC_A,
+                    Html5QrcodeSupportedFormats.UPC_E,
+                    Html5QrcodeSupportedFormats.QR_CODE
+                ],
+                experimentalFeatures: { useBarCodeDetectorIfSupported: true }
             };
 
+            const onDecode = (decodedText) => {
+                const now = Date.now();
+                if (!armed) return;
+                if (!decodedText || now - lastFireAt < 700) return; // throttle duplicates
+                armed = false;
+                lastFireAt = now;
+                scanBtn.disabled = false;
+                scanBtn.classList.remove('opacity-70');
+                sendCode(decodedText);
+            };
+
+            // Prefer back camera; fall back gracefully
             try {
-                await html5QrCode.start(hiResBack, startOpts, onDecode, () => {});
-                await enhanceVideoTrack();
-                resultDiv.innerHTML = '<span class="text-gray-600">Kamera startēta (1080p). Nospiediet “SKENĒT”.</span>';
+                await html5QrCode.start({ facingMode: { exact: "environment" } }, startOpts, onDecode, () => {});
+                resultDiv.innerHTML = '<span class="text-gray-600">Kamera startēta. Nospiediet “SKENĒT”.</span>';
                 return;
             } catch(_) {}
 
             try {
-                await html5QrCode.start(hintBack, startOpts, onDecode, () => {});
-                await enhanceVideoTrack();
+                await html5QrCode.start({ facingMode: "environment" }, startOpts, onDecode, () => {});
                 resultDiv.innerHTML = '<span class="text-gray-600">Kamera startēta. Nospiediet “SKENĒT”.</span>';
                 return;
             } catch(_) {}
@@ -240,9 +158,7 @@
             try {
                 const cams = await Html5Qrcode.getCameras();
                 if (cams?.length) {
-                    await html5QrCode.start({ deviceId: { exact: cams[0].id }, width: { ideal: 1920 }, height: { ideal: 1080 } },
-                                             startOpts, onDecode, () => {});
-                    await enhanceVideoTrack();
+                    await html5QrCode.start({ deviceId: { exact: cams[0].id } }, startOpts, onDecode, () => {});
                     resultDiv.innerHTML = '<span class="text-gray-600">Kamera startēta (rezerves režīmā). Nospiediet “SKENĒT”.</span>';
                 } else {
                     resultDiv.innerHTML = '<span class="text-red-700">Kamera nav atrasta.</span>';
