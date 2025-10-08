@@ -9,21 +9,22 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <div class="grid gap-6 md:grid-cols-2">
+                    <!-- Left column: camera -->
                     <div>
                         <div id="reader" style="width:100%;max-width:480px;"></div>
 
-                        <!-- Camera controls -->
-                        <div class="mt-2 flex items-center gap-2">
-                            <button id="flipBtn" type="button" class="px-3 py-1 border rounded">
-                                Pārslēgt kameru
+                        <div class="mt-3">
+                            <button id="scanBtn" class="px-4 py-2 rounded bg-blue-600 text-white">
+                                Skenēt
                             </button>
                         </div>
 
-                        <p class="text-sm text-gray-500 mt-2">
-                            Atļaujiet kamerai piekļuvi un novietojiet svītrkodu kadra centrā.
+                        <p class="text-sm text-gray-500 mt-3">
+                            Nospiediet “Skenēt”, atļaujiet kamerai piekļuvi, un novietojiet svītrkodu kadra centrā.
                         </p>
                     </div>
 
+                    <!-- Right column: results -->
                     <div>
                         <div class="mb-2">
                             <label class="block text-sm font-medium">Pēdējais skenētais:</label>
@@ -49,16 +50,14 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const resultDiv   = document.getElementById('result');
-        const lastCode    = document.getElementById('lastCode');
-        const manualBtn   = document.getElementById('manualBtn');
-        const manualCode  = document.getElementById('manualCode');
-        const flipBtn     = document.getElementById('flipBtn');
+        const resultDiv  = document.getElementById('result');
+        const lastCode   = document.getElementById('lastCode');
+        const manualBtn  = document.getElementById('manualBtn');
+        const manualCode = document.getElementById('manualCode');
+        const scanBtn    = document.getElementById('scanBtn');
 
-        let html5QrCode   = new Html5Qrcode("reader");
-        let allCameras    = [];
-        let currentCamIdx = 0;
-        let lastAt        = 0;
+        let html5QrCode  = null;
+        let lastAt       = 0;
 
         async function sendCode(code) {
             lastCode.value = code;
@@ -94,101 +93,61 @@
             if (code) sendCode(code);
         });
 
-        async function startWithConstraints(constraints) {
-            return html5QrCode.start(
-                constraints,
-                {
-                    fps: 10,
-                    // Landscape-ish box works better for 1D
-                    qrbox: (w, h) => {
-                        const size = Math.floor(Math.min(w, h) * 0.7);
-                        return { width: size, height: Math.floor(size * 0.55) };
-                    },
-                    // Support common 1D + QR formats
-                    formatsToSupport: [
-                        Html5QrcodeSupportedFormats.QR_CODE,
-                        Html5QrcodeSupportedFormats.EAN_13,
-                        Html5QrcodeSupportedFormats.EAN_8,
-                        Html5QrcodeSupportedFormats.CODE_128,
-                        Html5QrcodeSupportedFormats.CODE_39,
-                        Html5QrcodeSupportedFormats.UPC_A,
-                        Html5QrcodeSupportedFormats.UPC_E
-                    ],
-                    experimentalFeatures: { useBarCodeDetectorIfSupported: true }
-                },
-                (decodedText) => {
-                    const now = Date.now();
-                    if (decodedText && decodedText !== lastCode.value && (now - lastAt) > 1000) {
-                        lastAt = now;
-                        sendCode(decodedText);
-                    }
-                },
-                () => {}
-            );
-        }
-
-        async function restartCamera(constraints) {
-            try { await html5QrCode.stop(); } catch (_) {}
-            try { await html5QrCode.clear(); } catch (_) {}
-            return startWithConstraints(constraints).catch(err => {
-                resultDiv.innerHTML = '<span class="text-red-700">Neizdevās startēt kameru: ' + err + '</span>';
-            });
-        }
-
-        async function startPreferredCamera() {
-            // 1) Prefer back camera by facingMode on mobile
-            try {
-                await restartCamera({ facingMode: { exact: "environment" } });
-                return;
-            } catch (_) {
-                // ignore and continue to device list
+        // Start scanning when pressing "Scan"
+        scanBtn.addEventListener('click', async () => {
+            if (html5QrCode) {
+                try { await html5QrCode.stop(); } catch(_) {}
+                try { await html5QrCode.clear(); } catch(_) {}
             }
 
-            // 2) Fallback: list devices and choose a likely back cam
-            try {
-                allCameras = await Html5Qrcode.getCameras();
-                if (!allCameras || !allCameras.length) {
-                    resultDiv.innerHTML = '<span class="text-red-700">Kamera nav atrasta.</span>';
-                    return;
-                }
-                const preferredIdx = allCameras.findIndex(c => /back|rear|environment/i.test(c.label || ''));
-                currentCamIdx = preferredIdx >= 0 ? preferredIdx : 0;
+            html5QrCode = new Html5Qrcode("reader");
 
-                await restartCamera({
-                    deviceId: { exact: allCameras[currentCamIdx].id },
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 },
-                    facingMode: "environment",
-                    advanced: [{ focusMode: "continuous" }]
-                });
-            } catch (err) {
-                resultDiv.innerHTML = '<span class="text-red-700">Neizdevās startēt kameru: ' + err + '</span>';
+            // Try to open back camera first
+            const tryConstraints = [
+                { facingMode: { exact: "environment" } }, // preferred mobile back
+                { facingMode: "environment" },            // fallback
+                null                                      // final fallback: first found camera
+            ];
+
+            for (const constraints of tryConstraints) {
+                try {
+                    await html5QrCode.start(
+                        constraints,
+                        {
+                            fps: 10,
+                            qrbox: (w, h) => {
+                                const size = Math.floor(Math.min(w, h) * 0.7);
+                                return { width: size, height: Math.floor(size * 0.55) };
+                            },
+                            formatsToSupport: [
+                                Html5QrcodeSupportedFormats.QR_CODE,
+                                Html5QrcodeSupportedFormats.EAN_13,
+                                Html5QrcodeSupportedFormats.EAN_8,
+                                Html5QrcodeSupportedFormats.CODE_128,
+                                Html5QrcodeSupportedFormats.CODE_39,
+                                Html5QrcodeSupportedFormats.UPC_A,
+                                Html5QrcodeSupportedFormats.UPC_E
+                            ],
+                            experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+                        },
+                        (decodedText) => {
+                            const now = Date.now();
+                            if (decodedText && decodedText !== lastCode.value && now - lastAt > 1000) {
+                                lastAt = now;
+                                sendCode(decodedText);
+                            }
+                        },
+                        () => {}
+                    );
+                    resultDiv.innerHTML = '<span class="text-gray-600">Kamera startēta. Skenē...</span>';
+                    return; // success
+                } catch (err) {
+                    // continue to next option
+                }
             }
-        }
 
-        // Flip button
-        if (flipBtn) {
-            flipBtn.addEventListener('click', async () => {
-                try { await html5QrCode.stop(); } catch (_) {}
-                try { await html5QrCode.clear(); } catch (_) {}
-
-                if (!allCameras || !allCameras.length) {
-                    try { allCameras = await Html5Qrcode.getCameras(); } catch (_) {}
-                }
-                if (!allCameras || !allCameras.length) return;
-
-                currentCamIdx = (currentCamIdx + 1) % allCameras.length;
-                await restartCamera({
-                    deviceId: { exact: allCameras[currentCamIdx].id },
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 },
-                    facingMode: "environment",
-                    advanced: [{ focusMode: "continuous" }]
-                });
-            });
-        }
-
-        startPreferredCamera();
+            resultDiv.innerHTML = '<span class="text-red-700">Neizdevās piekļūt aizmugures kamerai.</span>';
+        });
     });
     </script>
 </x-app-layout>
