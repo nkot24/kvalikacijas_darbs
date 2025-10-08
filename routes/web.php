@@ -13,6 +13,7 @@ use App\Http\Controllers\AvansaRekinsController;
 use App\Http\Controllers\ProcessProgressController;
 use App\Http\Controllers\ProcessFileController;
 use App\Http\Controllers\OrderListController;
+use App\Http\Controllers\InventoryController;
 
 
 Route::get('/', function () {
@@ -41,22 +42,31 @@ Route::middleware('auth')->group(function () {
     Route::resource('users', UserController::class);
     Route::resource('processes', ProcessController::class);
     Route::resource('productions', ProductionController::class);
+    
     Route::get('/tasks', [TaskController::class, 'index'])->name('tasks.index');
     Route::put('/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
+    
     Route::get('/avansa-rekini/create', [AvansaRekinsController::class, 'create'])->name('avansa_rekini.create');
     Route::post('/avanss', [AvansaRekinsController::class, 'store'])->name('avanss.store');
     Route::post('/avansa-rekini/get-orders', [AvansaRekinsController::class, 'getOrders'])->name('avansa_rekini.getOrders');
     Route::post('/avansa-rekini/generate', [AvansaRekinsController::class, 'generate'])->name('avansa_rekini.generate');
     Route::get('/api/orders/by-client/{client_id}', [AvansaRekinsController::class, 'getOrders']);
+    
     Route::post('/process-progress', [ProcessProgressController::class, 'store'])->name('process-progress.store');
     Route::put('/process-progress/{progress}', [ProcessProgressController::class, 'update'])->name('process-progress.update');
     Route::delete('/process-progress/{progress}', [ProcessProgressController::class, 'destroy'])->name('process-progress.destroy');
+    
     Route::post('/process-files', [ProcessFileController::class, 'store'])->name('process-files.store');
     Route::get('/process-files/{file}/download', [ProcessFileController::class, 'download'])->name('process-files.download');
     Route::get('/process-files/{file}/view',     [ProcessFileController::class, 'view'])->name('process-files.view');
     Route::delete('/process-files/{file}',       [ProcessFileController::class, 'destroy'])->name('process-files.destroy');
+    
     Route::resource('orderList', OrderListController::class);
     Route::get('/order-list/completed', [OrderListController::class, 'completed'])->name('orderList.completed');
+
+    Route::get('/inventory/scan', [InventoryController::class, 'scanView'])->name('inventory.scan');
+    Route::post('/inventory/scan', [InventoryController::class, 'handleScan'])->name('inventory.scan.handle');
+    Route::get('/inventory/storage', [InventoryController::class, 'storageView'])->name('inventory.storage');
 
 
     
