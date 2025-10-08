@@ -9,28 +9,37 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <div class="grid gap-6 md:grid-cols-2">
-                    <!-- Left: Camera -->
+                    <!-- Left: Live camera -->
                     <div>
-                        <div id="reader" style="width:100%;max-width:480px;"></div>
-                        <p class="text-sm text-gray-500 mt-2">
-                            Kamera automātiski startējas. Novietojiet svītrkodu kadra centrā.
-                        </p>
+                        <div id="reader" style="width:100%;max-width:520px;"></div>
+
+                        <div class="mt-4">
+                            <button id="scanBtn"
+                                    class="w-full py-3 text-lg font-semibold rounded bg-blue-600 hover:bg-blue-700 text-white">
+                                SKENĒT
+                            </button>
+                            <p class="text-sm text-gray-500 mt-2">
+                                Kamera startējas automātiski. Nospiediet “SKENĒT” un turiet svītrkodu kadra centrā.
+                            </p>
+                        </div>
                     </div>
 
-                    <!-- Right: Results -->
+                    <!-- Right: Result / manual -->
                     <div>
-                        <div class="mb-2">
+                        <div class="mb-3">
                             <label class="block text-sm font-medium">Pēdējais skenētais:</label>
-                            <input id="lastCode" type="text" class="w-full border rounded p-2" readonly>
+                            <input id="lastCode" type="text" class="w-full border rounded p-2 font-mono" readonly>
                         </div>
 
-                        <div id="result" class="p-3 border rounded bg-gray-50 text-sm"></div>
+                        <div id="result" class="p-3 border rounded bg-gray-50 text-sm">
+                            Gatavs skenēšanai.
+                        </div>
 
                         <form id="manualForm" class="mt-4 flex gap-2" onsubmit="return false;">
                             <input id="manualCode" type="text" class="flex-1 border rounded p-2"
-                                   placeholder="Ievadiet svītrkodu manuāli">
-                            <button id="scanBtn" class="px-4 py-2 rounded bg-blue-600 text-white">
-                                Skenēt
+                                   placeholder="Ievadiet svītrkodu manuāli (izvēles)">
+                            <button id="manualBtn" class="px-4 rounded bg-gray-200 hover:bg-gray-300">
+                                Pievienot +1
                             </button>
                         </form>
                     </div>
@@ -42,14 +51,16 @@
     <!-- html5-qrcode from CDN -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script>
-    document.addEventListener('DOMContentLoaded', async function () {
+    document.addEventListener('DOMContentLoaded', async () => {
         const resultDiv   = document.getElementById('result');
         const lastCode    = document.getElementById('lastCode');
-        const manualCode  = document.getElementById('manualCode');
         const scanBtn     = document.getElementById('scanBtn');
+        const manualBtn   = document.getElementById('manualBtn');
+        const manualCode  = document.getElementById('manualCode');
 
         let html5QrCode   = new Html5Qrcode("reader");
-        let lastAt        = 0;
+        let armed         = false;   // only scan when armed by the button
+        let lastFireAt    = 0;
 
         async function sendCode(code) {
             if (!code) return;
@@ -76,72 +87,87 @@
                 } else {
                     resultDiv.innerHTML = `<div class="text-red-700">❌ ${data.message || 'Kļūda pievienojot.'}</div>`;
                 }
-            } catch (e) {
+            } catch {
                 resultDiv.innerHTML = `<div class="text-red-700">❌ Tīkla kļūda.</div>`;
             }
         }
 
-        // Manual scan button
-        scanBtn.addEventListener('click', () => {
+        // Manual submit still available
+        manualBtn.addEventListener('click', () => {
             const code = manualCode.value.trim();
             sendCode(code);
         });
 
-        // Automatically start the back camera for live scanning
+        // Arm one scan when the button is pressed
+        scanBtn.addEventListener('click', () => {
+            armed = true;
+            resultDiv.textContent = 'Skenēju... Turiet svītrkodu kadra centrā.';
+            scanBtn.disabled = true;
+            scanBtn.classList.add('opacity-70');
+        });
+
+        // Auto-start the camera on load (prefer back camera, fall back gracefully)
         async function startCamera() {
+            const startOpts = {
+                fps: 15,
+                // Wide/landscape box helps for 1D barcodes
+                qrbox: (w, h) => {
+                    const width = Math.floor(Math.min(w, 900) * 0.85);
+                    const height = Math.floor(width * 0.45);
+                    return { width, height };
+                },
+                formatsToSupport: [
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.CODE_128,
+                    Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.UPC_A,
+                    Html5QrcodeSupportedFormats.UPC_E,
+                    Html5QrcodeSupportedFormats.QR_CODE
+                ],
+                experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+            };
+
+            // decode callback (fires frequently; we only act when 'armed')
+            const onDecode = (decodedText) => {
+                const now = Date.now();
+                if (!armed) return;
+                // avoid double-firing
+                if (!decodedText || now - lastFireAt < 800) return;
+
+                armed = false;
+                lastFireAt = now;
+                scanBtn.disabled = false;
+                scanBtn.classList.remove('opacity-70');
+
+                sendCode(decodedText);
+            };
+
+            // attempt 1: true back cam
             try {
-                await html5QrCode.start(
-                    { facingMode: { exact: "environment" } }, // prefer back cam
-                    {
-                        fps: 10,
-                        qrbox: (w, h) => {
-                            const size = Math.floor(Math.min(w, h) * 0.7);
-                            return { width: size, height: Math.floor(size * 0.55) };
-                        },
-                        formatsToSupport: [
-                            Html5QrcodeSupportedFormats.QR_CODE,
-                            Html5QrcodeSupportedFormats.EAN_13,
-                            Html5QrcodeSupportedFormats.EAN_8,
-                            Html5QrcodeSupportedFormats.CODE_128,
-                            Html5QrcodeSupportedFormats.CODE_39,
-                            Html5QrcodeSupportedFormats.UPC_A,
-                            Html5QrcodeSupportedFormats.UPC_E
-                        ],
-                        experimentalFeatures: { useBarCodeDetectorIfSupported: true }
-                    },
-                    (decodedText) => {
-                        const now = Date.now();
-                        if (decodedText && decodedText !== lastCode.value && (now - lastAt) > 1000) {
-                            lastAt = now;
-                            sendCode(decodedText);
-                        }
-                    },
-                    () => {}
-                );
-                resultDiv.innerHTML = '<span class="text-gray-600">Kamera startēta. Skenē...</span>';
-            } catch (err) {
-                try {
-                    // fallback to first camera
-                    const cams = await Html5Qrcode.getCameras();
-                    if (cams && cams.length) {
-                        await html5QrCode.start(
-                            { deviceId: { exact: cams[0].id } },
-                            { fps: 10, qrbox: (w, h) => ({ width: Math.min(w, h)*0.7, height: Math.min(w, h)*0.5 }) },
-                            (decodedText) => {
-                                const now = Date.now();
-                                if (decodedText && decodedText !== lastCode.value && (now - lastAt) > 1000) {
-                                    lastAt = now;
-                                    sendCode(decodedText);
-                                }
-                            }
-                        );
-                        resultDiv.innerHTML = '<span class="text-gray-600">Kamera startēta (rezerves režīmā).</span>';
-                    } else {
-                        resultDiv.innerHTML = '<span class="text-red-700">Kamera nav atrasta.</span>';
-                    }
-                } catch (e) {
-                    resultDiv.innerHTML = '<span class="text-red-700">Neizdevās startēt kameru: ' + e + '</span>';
+                await html5QrCode.start({ facingMode: { exact: "environment" } }, startOpts, onDecode, () => {});
+                resultDiv.innerHTML = '<span class="text-gray-600">Kamera startēta. Nospiediet “SKENĒT”.</span>';
+                return;
+            } catch (_) {}
+
+            // attempt 2: general back cam hint
+            try {
+                await html5QrCode.start({ facingMode: "environment" }, startOpts, onDecode, () => {});
+                resultDiv.innerHTML = '<span class="text-gray-600">Kamera startēta. Nospiediet “SKENĒT”.</span>';
+                return;
+            } catch (_) {}
+
+            // attempt 3: first available camera
+            try {
+                const cams = await Html5Qrcode.getCameras();
+                if (cams?.length) {
+                    await html5QrCode.start({ deviceId: { exact: cams[0].id } }, startOpts, onDecode, () => {});
+                    resultDiv.innerHTML = '<span class="text-gray-600">Kamera startēta (rezerves režīmā). Nospiediet “SKENĒT”.</span>';
+                } else {
+                    resultDiv.innerHTML = '<span class="text-red-700">Kamera nav atrasta.</span>';
                 }
+            } catch (e) {
+                resultDiv.innerHTML = '<span class="text-red-700">Neizdevās startēt kameru.</span>';
             }
         }
 
