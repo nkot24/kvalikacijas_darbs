@@ -101,20 +101,23 @@
         // Arm one scan when the button is pressed
         scanBtn.addEventListener('click', () => {
             armed = true;
-            resultDiv.textContent = 'Skenēju... Turiet svītrkodu kadra centrā.';
+            resultDiv.textContent = 'Skenēju... Turiet svītrkodu plašajā kadra zonā.';
             scanBtn.disabled = true;
             scanBtn.classList.add('opacity-70');
         });
 
-        // Auto-start the camera on load (prefer back camera, fall back gracefully)
+        // Auto-start camera with a bigger scan area
         async function startCamera() {
             const startOpts = {
-                fps: 15,
-                // Wide/landscape box helps for 1D barcodes
-                qrbox: (w, h) => {
-                    const width = Math.floor(Math.min(w, 900) * 0.85);
-                    const height = Math.floor(width * 0.45);
-                    return { width, height };
+                fps: 20, // smoother detection if device can handle it
+                // MUCH bigger scan area: ~95% width & 65% height of view
+                qrbox: (viewW, viewH) => {
+                    const w = Math.floor(viewW * 0.95);
+                    const h = Math.floor(viewH * 0.65);
+                    return {
+                        width: Math.min(w, viewW - 10),
+                        height: Math.min(h, viewH - 10)
+                    };
                 },
                 formatsToSupport: [
                     Html5QrcodeSupportedFormats.EAN_13,
@@ -128,36 +131,30 @@
                 experimentalFeatures: { useBarCodeDetectorIfSupported: true }
             };
 
-            // decode callback (fires frequently; we only act when 'armed')
             const onDecode = (decodedText) => {
                 const now = Date.now();
                 if (!armed) return;
-                // avoid double-firing
-                if (!decodedText || now - lastFireAt < 800) return;
-
+                if (!decodedText || now - lastFireAt < 700) return; // throttle duplicates
                 armed = false;
                 lastFireAt = now;
                 scanBtn.disabled = false;
                 scanBtn.classList.remove('opacity-70');
-
                 sendCode(decodedText);
             };
 
-            // attempt 1: true back cam
+            // Prefer back camera; fall back gracefully
             try {
                 await html5QrCode.start({ facingMode: { exact: "environment" } }, startOpts, onDecode, () => {});
                 resultDiv.innerHTML = '<span class="text-gray-600">Kamera startēta. Nospiediet “SKENĒT”.</span>';
                 return;
-            } catch (_) {}
+            } catch(_) {}
 
-            // attempt 2: general back cam hint
             try {
                 await html5QrCode.start({ facingMode: "environment" }, startOpts, onDecode, () => {});
                 resultDiv.innerHTML = '<span class="text-gray-600">Kamera startēta. Nospiediet “SKENĒT”.</span>';
                 return;
-            } catch (_) {}
+            } catch(_) {}
 
-            // attempt 3: first available camera
             try {
                 const cams = await Html5Qrcode.getCameras();
                 if (cams?.length) {
@@ -166,7 +163,7 @@
                 } else {
                     resultDiv.innerHTML = '<span class="text-red-700">Kamera nav atrasta.</span>';
                 }
-            } catch (e) {
+            } catch(e) {
                 resultDiv.innerHTML = '<span class="text-red-700">Neizdevās startēt kameru.</span>';
             }
         }
