@@ -12,7 +12,7 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     <p><strong>Pasūtījums:</strong> #{{ data_get($production, 'order.id', '-') }}</p>
-                    <p><strong>Produkta nosaukums:</strong> {{ data_get($production, 'order.produkts', '-') }}</p>
+                    <p><strong>Produkta nosaukums:</strong> {{ $production->order->product->nosaukums ?? $production->order->produkts }}</p>
                     <p><strong>Daudzums:</strong> {{ (int) data_get($production, 'order.daudzums', 0) }}</p>
                 </div>
             </div>
