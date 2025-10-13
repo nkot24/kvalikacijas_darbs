@@ -55,8 +55,38 @@
                     <table class="table-auto w-full min-w-[1200px] border-collapse border border-gray-300 bg-white">
                         <thead>
                             <tr>
-                                <th class="border border-gray-300 px-4 py-2">Svītrkods</th>
-                                <th class="border border-gray-300 px-4 py-2">Nosaukums</th>
+                                <th class="border border-gray-300 px-4 py-2">
+                                    <a href="{{ route('products.index', [
+                                        'sort_by' => 'svitr_kods',
+                                        'sort_order' => ($sort_by === 'svitr_kods' && $sort_order === 'asc') ? 'desc' : 'asc'
+                                    ]) }}" class="flex items-center gap-1">
+                                        Svītrkods
+                                        @if ($sort_by === 'svitr_kods')
+                                            @if ($sort_order === 'asc')
+                                                🔼
+                                            @else
+                                                🔽
+                                            @endif
+                                        @endif
+                                    </a>
+                                </th>
+
+                                <th class="border border-gray-300 px-4 py-2">
+                                    <a href="{{ route('products.index', [
+                                        'sort_by' => 'nosaukums',
+                                        'sort_order' => ($sort_by === 'nosaukums' && $sort_order === 'asc') ? 'desc' : 'asc'
+                                    ]) }}" class="flex items-center gap-1">
+                                        Nosaukums
+                                        @if ($sort_by === 'nosaukums')
+                                            @if ($sort_order === 'asc')
+                                                🔼
+                                            @else
+                                                🔽
+                                            @endif
+                                        @endif
+                                    </a>
+                                </th>
+
                                 <th class="border border-gray-300 px-4 py-2">Pārdošanas cena</th>
                                 <th class="border border-gray-300 px-4 py-2">Vairumtirdzniecības cena</th>
                                 <th class="border border-gray-300 px-4 py-2">Daudzums noliktavā</th>

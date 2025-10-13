@@ -10,10 +10,21 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ProductController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::all();
-        return view('products.index', compact('products'));
+        $sort_by = $request->get('sort_by', 'svitr_kods'); // Default sorting column
+        $sort_order = $request->get('sort_order', 'asc');  // Default sorting order
+
+        // Allow only specific sortable columns
+        $allowedSorts = ['svitr_kods', 'nosaukums'];
+
+        if (!in_array($sort_by, $allowedSorts)) {
+            $sort_by = 'svitr_kods';
+        }
+
+        $products = Product::orderBy($sort_by, $sort_order)->get();
+
+        return view('products.index', compact('products', 'sort_by', 'sort_order'));
     }
 
     public function create()
