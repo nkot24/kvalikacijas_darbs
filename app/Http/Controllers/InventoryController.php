@@ -3,23 +3,20 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Product;
+use App\Models\InventoryTransfer;
 
 class InventoryController extends Controller
 {
-    // Show the live barcode scan view
     public function scanView()
     {
         return view('inventory.scan');
     }
 
-    // Handle a scanned barcode: increment daudzums_noliktava by 1 if svitr_kods matches
     public function handleScan(Request $request)
     {
-        $request->validate([
-            'barcode' => 'required|string',
-        ]);
-
+        $request->validate(['barcode' => ['required','string']]);
         $barcode = trim($request->input('barcode'));
         $product = Product::where('svitr_kods', $barcode)->first();
 
@@ -30,56 +27,87 @@ class InventoryController extends Controller
             ], 404);
         }
 
-        // Increment inventory count
-        $product->increment('daudzums_noliktava', 1);
-        $product->refresh();
-
         return response()->json([
             'ok' => true,
-            'message' => 'Daudzums noliktavā palielināts par 1.',
+            'message' => 'Produkts atrasts.',
             'product' => [
-                'id' => $product->id,
-                'nosaukums' => $product->nosaukums,
+                'id'         => $product->id,
+                'nosaukums'  => $product->nosaukums,
                 'svitr_kods' => $product->svitr_kods,
-                'daudzums_noliktava' => $product->daudzums_noliktava,
             ],
         ]);
     }
 
-    // Show a storage view listing product nosaukums + daudzums_noliktava, with search
-    public function storageView(Request $request)
-    {
-        $q = $request->input('q');
-        $query = Product::query()
-            ->select(['id','nosaukums','svitr_kods','daudzums_noliktava'])
-            ->orderBy('nosaukums');
-
-        if ($q) {
-            $query->where(function($sub) use ($q) {
-                $sub->where('nosaukums', 'like', '%' . $q . '%')
-                    ->orWhere('svitr_kods', 'like', '%' . $q . '%');
-            });
-        }
-
-        $products = $query->paginate(25)->withQueryString();
-
-        return view('inventory.storage', compact('products','q'));
-    }
-    public function updateQuantity(Request $request, \App\Models\Product $product)
+    public function storeTransfer(Request $request)
     {
         $data = $request->validate([
-            'daudzums_noliktava' => ['required','integer','min:0'], // adjust min if negatives allowed
+            'product_id' => ['required','exists:products,id'],
+            'qty'        => ['required','integer','min:1'],
         ]);
 
-        $product->update(['daudzums_noliktava' => $data['daudzums_noliktava']]);
+        $transfer = InventoryTransfer::create([
+            'product_id' => $data['product_id'],
+            'qty'        => $data['qty'],
+            'created_by' => Auth::id(),
+        ]);
 
-        // Return JSON for AJAX updates
         return response()->json([
             'ok' => true,
-            'product_id' => $product->id,
-            'daudzums_noliktava' => $product->daudzums_noliktava,
-            'message' => 'Daudzums noliktavā atjaunināts.',
+            'message' => 'Pārvietošanas ieraksts pievienots.',
+            'transfer' => [
+                'id' => $transfer->id,
+            ],
         ]);
     }
 
+    public function transferIndex(Request $request)
+    {
+        $q = $request->input('q');
+        $onlyNotAccounted = (bool)$request->boolean('only_not_accounted');
+
+        $transfers = InventoryTransfer::with(['product','creator'])
+            ->when($q, function($qq) use ($q) {
+                $qq->whereHas('product', function($p) use ($q) {
+                    $p->where('nosaukums','like',"%$q%")
+                      ->orWhere('svitr_kods','like',"%$q%");
+                });
+            })
+            ->when($onlyNotAccounted, fn($qq) => $qq->where('accounted', false))
+            ->orderByDesc('id')
+            ->paginate(25)
+            ->withQueryString();
+
+        return view('inventory.transfers', compact('transfers','q','onlyNotAccounted'));
+    }
+
+    public function transferBulkAccount(Request $request)
+    {
+        $data = $request->validate([
+            'ids'   => ['required','array'],
+            'ids.*' => ['integer','exists:inventory_transfers,id'],
+            'accounted' => ['nullable','boolean'],
+        ]);
+
+        $accounted = $data['accounted'] ?? true;
+
+        InventoryTransfer::whereIn('id', $data['ids'])
+            ->update([
+                'accounted' => $accounted,
+                'accounted_at' => $accounted ? now() : null,
+            ]);
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function transferBulkDelete(Request $request)
+    {
+        $ids = $request->validate([
+            'ids'   => ['required','array'],
+            'ids.*' => ['integer','exists:inventory_transfers,id'],
+        ])['ids'];
+
+        InventoryTransfer::whereIn('id', $ids)->delete();
+
+        return response()->json(['ok' => true, 'message' => 'Ieraksti dzēsti.']);
+    }
 }

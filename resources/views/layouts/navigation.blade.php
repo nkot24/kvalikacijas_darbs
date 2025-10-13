@@ -44,7 +44,7 @@
                                         {{ __('Iepirkuma saraksts') }}
                                     </x-dropdown-link>
                                     <x-dropdown-link :href="route('inventory.scan')" :active="request()->routeIs('inventory.*')">
-                                        {{ __('Skenēt produktus') }}
+                                        {{ __('Skenēt saražoto produkciju') }}
                                     </x-dropdown-link>
                                 </x-slot>
                             </x-dropdown>
@@ -67,8 +67,8 @@
                                     <x-dropdown-link :href="route('orders.complete')" :active="request()->routeIs('orders.*')">
                                         {{ __('Izpildītie pasūtījumi') }}
                                     </x-dropdown-link>
-                                    <x-dropdown-link :href="route('inventory.storage')" :active="request()->routeIs('inventory.*')">
-                                        {{ __('Noliktava') }}
+                                    <x-dropdown-link :href="route('inventory.transfers.index')" :active="request()->routeIs('inventory.*')">
+                                        {{ __('Saražotā produkcija') }}
                                     </x-dropdown-link>
                                 </x-slot>
                             </x-dropdown>
@@ -184,11 +184,11 @@
                     <x-responsive-nav-link :href="route('orders.complete')" :active="request()->routeIs('orders.*')">
                         {{ __('Izpildītie pasūtījumi') }}
                     </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('inventory.storage')" :active="request()->routeIs('inventory.*')">
-                        {{ __('Noliktava') }}
+                    <x-responsive-nav-link :href="route('inventory.transfers.index')" :active="request()->routeIs('inventory.*')">
+                        {{ __('Saražotā produkcija') }}
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('inventory.scan')" :active="request()->routeIs('inventory.*')">
-                        {{ __('Skenēt produktus') }}
+                        {{ __('Skenēt saražoto produkciju') }}
                     </x-responsive-nav-link>
                 </div>
 
@@ -286,7 +286,7 @@
                         {{ __('Iepirkumu saraksts') }}
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('inventory.scan')" :active="request()->routeIs('inventory.*')">
-                        {{ __('Skanēt produktus') }}
+                        {{ __('Skenēt saražoto produkciju') }}
                     </x-responsive-nav-link>
                 </div>
 
