@@ -1,28 +1,15 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Dashboard') }}
+            {{ __('Darba sākšana / beigšana') }}
         </h2>
     </x-slot>
 
-    <!-- Original Dashboard Section -->
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
-                    {{ __("You're logged in!") }}
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ✅ Added Work Start/End Section -->
     <div class="py-8 max-w-xl mx-auto text-center">
-        <h3 class="text-lg font-semibold mb-4">Darba sākšana / beigšana</h3>
         <p class="mb-4 text-lg">Datums: {{ $today }}</p>
 
         @if (session('success'))
-            <div class="mb-4 text-green-600 font-medium">{{ session('success') }}</div>
+            <div class="mb-4 text-green-600">{{ session('success') }}</div>
         @endif
 
         @if (!$log || !$log->start_time)
@@ -37,7 +24,7 @@
             </form>
         @else
             <p class="text-gray-600 mt-4">Darbs šodien jau pabeigts.</p>
-            <p class="mt-2">Nostrādāts no <strong>{{ $log->start_time }}</strong> līdz <strong>{{ $log->end_time }}</strong></p>
+            <p class="mt-2">Nostrādāts no {{ $log->start_time }} līdz {{ $log->end_time }}</p>
         @endif
     </div>
 </x-app-layout>

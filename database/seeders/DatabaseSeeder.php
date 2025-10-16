@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             ProductSeeder::class,
             ProcessSeeder::class,
             OrderSeeder::class,
+            WorkLogSeeder::class,
         ]);
 
         $user = User::firstOrCreate(

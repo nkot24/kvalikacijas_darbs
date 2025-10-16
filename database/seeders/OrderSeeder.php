@@ -3,62 +3,65 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Carbon;
+use App\Models\Order;
+use Carbon\Carbon;
 
 class OrderSeeder extends Seeder
 {
     public function run(): void
     {
-        // assume first 3 clients/products from the other seeders
-        $now = Carbon::now();
-
-        DB::table('orders')->insert([
+        $orders = [
             [
                 'pasutijuma_numurs' => 'ORD-0001',
-                'datums'            => $now,
-                'client_id'         => 1,
-                'klients'           => 'ACME SIA',
-                'products_id'       => 1,
-                'produkts'          => 'Steel Bracket 50x50',
-                'daudzums'          => 100,
-                'izpildes_datums'   => $now->copy()->addDays(7)->toDateString(),
-                'prioritāte'        => 'augsta',
-                'statuss'           => 'nav nodots ražošanai',
-                'piezimes'          => 'Steidzams pasūtījums.',
-                'created_at'        => now(),
-                'updated_at'        => now(),
+                'klients' => 'ACME SIA',
+                'produkts' => 'Steel Bracket 50x50',
+                'daudzums' => 100,
+                'prioritāte' => 'augsta',
+                'statuss' => 'nav nodots ražošanai',
+                'piezimes' => 'Steidzams pasūtījums.',
+                'datums' => Carbon::now('Europe/Riga'),
+                'izpildes_datums' => Carbon::now('Europe/Riga')->addDays(7),
+                'client_id' => 1,
+                'products_id' => 1,
             ],
             [
                 'pasutijuma_numurs' => 'ORD-0002',
-                'datums'            => $now->copy()->subDay(),
-                'client_id'         => 2,
-                'klients'           => 'Baltic Metals',
-                'products_id'       => 2,
-                'produkts'          => 'Aluminum Plate 200x300x8',
-                'daudzums'          => 12,
-                'izpildes_datums'   => $now->copy()->addDays(14)->toDateString(),
-                'prioritāte'        => 'normāla',
-                'statuss'           => 'procesā',
-                'piezimes'          => null,
-                'created_at'        => now(),
-                'updated_at'        => now(),
+                'klients' => 'Baltic Metals',
+                'produkts' => 'Aluminum Plate 200x300x8',
+                'daudzums' => 12,
+                'prioritāte' => 'normāla',
+                'statuss' => 'procesā',
+                'piezimes' => '?',
+                'datums' => Carbon::now('Europe/Riga')->subDay(),
+                'izpildes_datums' => Carbon::now('Europe/Riga')->addDays(14),
+                'client_id' => 2,
+                'products_id' => 2,
             ],
             [
                 'pasutijuma_numurs' => 'ORD-0003',
-                'datums'            => $now->copy()->subDays(2),
-                'client_id'         => 3,
-                'klients'           => 'Nordic Fabrication',
-                'products_id'       => 3,
-                'produkts'          => 'Welded Frame M',
-                'daudzums'          => 4,
-                'izpildes_datums'   => $now->copy()->addDays(21)->toDateString(),
-                'prioritāte'        => 'zema',
-                'statuss'           => 'nav nodots ražošanai',
-                'piezimes'          => 'Pēc krāsošanas piegāde.',
-                'created_at'        => now(),
-                'updated_at'        => now(),
+                'klients' => 'Nordic Fabrication',
+                'produkts' => 'Welded Frame M',
+                'daudzums' => 4,
+                'prioritāte' => 'zema',
+                'statuss' => 'nav nodots ražošanai',
+                'piezimes' => 'Pēc krāsošanas piegāde.',
+                'datums' => Carbon::now('Europe/Riga')->subDays(2),
+                'izpildes_datums' => Carbon::now('Europe/Riga')->addWeeks(3),
+                'client_id' => 3,
+                'products_id' => 3,
             ],
-        ]);
+        ];
+
+        foreach ($orders as $order) {
+            Order::firstOrCreate(
+                ['pasutijuma_numurs' => $order['pasutijuma_numurs']],
+                array_merge($order, [
+                    'created_at' => Carbon::now('Europe/Riga'),
+                    'updated_at' => Carbon::now('Europe/Riga'),
+                ])
+            );
+        }
+
+        echo "✅ OrderSeeder completed successfully.\n";
     }
 }

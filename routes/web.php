@@ -14,16 +14,25 @@ use App\Http\Controllers\ProcessProgressController;
 use App\Http\Controllers\ProcessFileController;
 use App\Http\Controllers\OrderListController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\WorkLogController;
+use App\Models\WorkLog;
+use Illuminate\Support\Facades\Auth;
 
 
-Route::get('/', function () {
-    return view('/auth/login');
-});
+    Route::get('/', function () {
+        return view('/auth/login');
+    });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+    // ✅ Fixed Dashboard route with $today and $log variables
+    Route::get('/dashboard', function () {
+        $today = now()->toDateString();
+        $log = WorkLog::where('user_id', Auth::id())
+                    ->whereDate('created_at', $today)
+                    ->first();
 
+        return view('dashboard', compact('today', 'log'));
+    })->middleware(['auth', 'verified'])->name('dashboard');
+    
 Route::middleware('auth')->group(function () {
     Route::get('/clients/full-export', [ClientController::class, 'fullExport'])->name('clients.fullExport');
     Route::post('/clients/full-import', [ClientController::class, 'fullImport'])->name('clients.fullImport');
@@ -70,6 +79,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/inventory/transfers', [InventoryController::class, 'transferIndex'])->name('inventory.transfers.index');
     Route::patch('/inventory/transfers/account', [InventoryController::class, 'transferBulkAccount'])->name('inventory.transfers.account');
     Route::delete('/inventory/transfers', [InventoryController::class, 'transferBulkDelete'])->name('inventory.transfers.delete');
+
+    Route::get('/darbs', [WorkLogController::class, 'index'])->name('work.index');
+    Route::post('/darbs/sakt', [WorkLogController::class, 'startWork'])->name('work.start');
+    Route::post('/darbs/beigt', [WorkLogController::class, 'endWork'])->name('work.end');
+    Route::get('/darbs/stundas', [WorkLogController::class, 'workHoursView'])->name('work.hours');
 
 
 

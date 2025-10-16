@@ -31,7 +31,7 @@ class AuthenticatedSessionController extends Controller
 
         if ($user->role === 'worker') {
             // Redirect workers to tasks page
-            return redirect()->route('tasks.index');
+            return redirect()->route('work.index');
         }
 
         // Other users go to dashboard

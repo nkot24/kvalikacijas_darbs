@@ -46,6 +46,9 @@
                                     <x-dropdown-link :href="route('inventory.scan')" :active="request()->routeIs('inventory.*')">
                                         {{ __('Skenēt saražoto produkciju') }}
                                     </x-dropdown-link>
+                                    <x-dropdown-link :href="route('work.index')" :active="request()->routeIs('work.*')">
+                                        {{ __('Sākt/beigt darbu') }}
+                                    </x-dropdown-link>
                                 </x-slot>
                             </x-dropdown>
 
@@ -69,6 +72,9 @@
                                     </x-dropdown-link>
                                     <x-dropdown-link :href="route('inventory.transfers.index')" :active="request()->routeIs('inventory.*')">
                                         {{ __('Saražotā produkcija') }}
+                                    </x-dropdown-link>
+                                    <x-dropdown-link :href="route('work.hours')" :active="request()->routeIs('work.*')">
+                                        {{ __('Darba stundas') }}
                                     </x-dropdown-link>
                                 </x-slot>
                             </x-dropdown>
@@ -190,6 +196,12 @@
                     <x-responsive-nav-link :href="route('inventory.scan')" :active="request()->routeIs('inventory.*')">
                         {{ __('Skenēt saražoto produkciju') }}
                     </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('work.index')" :active="request()->routeIs('work.*')">
+                        {{ __('Sākt/beigt darbu') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('work.hours')" :active="request()->routeIs('work.*')">
+                        {{ __('Darba stundas') }}
+                    </x-responsive-nav-link>
                 </div>
 
                 <!-- Responsive Settings Options -->
@@ -231,6 +243,10 @@
                         <a href="{{ route('orderList.index') }}"
                            class="{{ request()->routeIs('orderList.*') ? 'text-gray-900 font-semibold' : 'text-gray-700 hover:text-gray-900' }}">
                             {{ __('Iepirkumu saraksts') }}
+                        </a>
+                        <a href="{{ route('work.index') }}"
+                           class="{{ request()->routeIs('work.*') ? 'text-gray-900 font-semibold' : 'text-gray-700 hover:text-gray-900' }}">
+                            {{ __('Sākt/beigt darbu') }}
                         </a>
                     </div>
 
@@ -287,6 +303,9 @@
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('inventory.scan')" :active="request()->routeIs('inventory.*')">
                         {{ __('Skenēt saražoto produkciju') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('work.index')" :active="request()->routeIs('work.*')">
+                        {{ __('Darba stundas') }}
                     </x-responsive-nav-link>
                 </div>
 
