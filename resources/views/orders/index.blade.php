@@ -84,12 +84,15 @@
                             <th class="border px-4 py-2">{!! sortLink('prioritāte', 'Prioritāte') !!}</th>
                             <th class="border px-4 py-2">{!! sortLink('statuss', 'Statuss') !!}</th>
                             <th class="border px-4 py-2">Piezīmes</th>
-                            <th class="border px-4 py-2">Darbības</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($orders as $order)
-                            <tr>
+                            <tr 
+                                onclick="window.location='{{ route('orders.show', $order->id) }}'"
+                                class="cursor-pointer hover:bg-gray-100 transition-colors"
+                                title="Klikšķiniet, lai atvērtu pasūtījumu"
+                            >
                                 <td class="border px-4 py-2">{{ $order->pasutijuma_numurs }}</td>
                                 <td class="border px-4 py-2">{{ $order->datums }}</td>
                                 <td class="border px-4 py-2">{{ $order->client->nosaukums ?? $order->klients }}</td>
@@ -99,33 +102,10 @@
                                 <td class="border px-4 py-2">{{ $order->prioritāte }}</td>
                                 <td class="border px-4 py-2">{{ $order->statuss }}</td>
                                 <td class="border px-4 py-2">{{ $order->piezimes ?? '-' }}</td>
-
-                                <td class="border px-4 py-2 flex justify-center flex-wrap gap-3 text-2xl">
-                                    <a href="{{ route('orders.edit', $order) }}" class="text-blue-600 hover:scale-110 transition-transform" title="Rediģēt">✏️</a>
-                                    <a href="{{ route('orders.show', $order) }}" class="text-blue-600 hover:scale-110 transition-transform" title="Skatīt">👁️</a>
-                                    <a href="{{ route('productions.create', ['order_id' => $order->id]) }}" class="text-green-600 hover:scale-110 transition-transform" title="Pievienot ražošanai">🏭</a>
-                                    <a href="{{ route('orders.print', $order) }}" target="_blank" class="text-purple-600 hover:scale-110 transition-transform" title="Izprintēt">🖨️</a>
-
-                                    {{-- NEW: Avansa rēķins darbība --}}
-                                    <a
-                                        href="{{ route('avansa_rekini.create', [
-                                            'client_id' => $order->client_id ? $order->client_id : 'one_time',
-                                            'order_id'  => $order->id
-                                        ]) }}"
-                                        class="text-amber-600 hover:scale-110 transition-transform"
-                                        title="Avansa rēķins"
-                                    >📑</a>
-
-                                    <form action="{{ route('orders.destroy', $order) }}" method="POST" onsubmit="return confirm('Vai tiešām vēlaties dzēst šo pasūtījumu?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:scale-110 transition-transform" title="Dzēst">🗑️</button>
-                                    </form>
-                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10" class="text-center py-4">Nav pieejami pasūtījumi.</td>
+                                <td colspan="9" class="text-center py-4">Nav pieejami pasūtījumi.</td>
                             </tr>
                         @endforelse
                     </tbody>

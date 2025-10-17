@@ -6,6 +6,17 @@
     </x-slot>
 
     <div class="py-6">
+
+        {{-- Back Button --}}
+        <div class="max-w-4xl mx-auto mb-4 px-6">
+            <a href="{{ route('orders.index') }}"
+            class="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                ← Atpakaļ
+            </a>
+        </div>
+
+
+
         {{-- Pasūtījuma informācija --}}
         <div class="max-w-4xl mx-auto bg-white shadow-sm rounded-lg p-6 space-y-4">
             <div><strong>Datums:</strong> {{ optional($order->datums)->format('d.m.Y H:i') ?? $order->datums }}</div>
@@ -19,11 +30,53 @@
             <div><strong>Statuss:</strong> {{ $order->statuss }}</div>
             <div><strong>Piezīmes:</strong> {{ $order->piezimes ?? '—' }}</div>
 
-            <div class="pt-4">
-                <a href="{{ route('orders.print', $order) }}" target="_blank"
-                   class="inline-block px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">
-                    🖨️ Izprintēt ražošanas lapu
+            {{-- Action Buttons --}}
+            <div class="pt-6 flex flex-wrap gap-3">
+                {{-- Edit order --}}
+                <a href="{{ route('orders.edit', $order) }}" 
+                   class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    Rediģēt pasūtījumu
                 </a>
+
+                {{-- Create production --}}
+                <a href="{{ route('productions.create', ['order_id' => $order->id]) }}" 
+                   class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                    Pievienot ražošanai
+                </a>
+
+                {{-- Edit production (only if exists) --}}
+                @if($order->production)
+                    <a href="{{ route('productions.edit', $order->production->id) }}" 
+                       class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">
+                        Labot ražošanu
+                    </a>
+                @endif
+
+                {{-- Print --}}
+                <a href="{{ route('orders.print', $order) }}" target="_blank"
+                   class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
+                    Izprintēt
+                </a>
+
+                {{-- Invoice --}}
+                <a href="{{ route('avansa_rekini.create', [
+                        'client_id' => $order->client_id ? $order->client_id : 'one_time',
+                        'order_id'  => $order->id
+                    ]) }}" 
+                   class="px-4 py-2 bg-amber-500 text-white rounded hover:bg-amber-600">
+                    Avansa rēķins
+                </a>
+
+                {{-- Delete --}}
+                <form action="{{ route('orders.destroy', $order) }}" method="POST" 
+                      onsubmit="return confirm('Vai tiešām vēlaties dzēst šo pasūtījumu?');">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" 
+                            class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                        Dzēst
+                    </button>
+                </form>
             </div>
         </div>
 
@@ -32,7 +85,6 @@
             <h3 class="text-lg font-semibold mb-3">Procesi</h3>
 
             @php
-                /** @var \App\Models\Production|null $production */
                 $production = $order->production ?? null;
             @endphp
 
@@ -40,7 +92,6 @@
                 <p>Šim pasūtījumam vēl nav izveidota ražošana.</p>
             @else
                 @php
-                    // Eager-load everything we show (avoids N+1)
                     $production->load([
                         'tasks.process',
                         'tasks.user',
@@ -57,7 +108,6 @@
                         $done = (int) ($task->done_amount ?? 0);
                         $pct  = $orderQty > 0 ? round(($done / $orderQty) * 100) : 0;
 
-                        // Per-user totals from work logs (keep user id)
                         $byUser = $task->workLogs
                             ->groupBy('user_id')
                             ->map(function ($logs, $uid) {
@@ -69,7 +119,6 @@
                             })
                             ->sortByDesc('total');
 
-                        // Pull ONLY progress for this task (if you have process->progress relation)
                         $progressForTask = collect();
                         if ($task->process && method_exists($task->process, 'progress')) {
                             $progressForTask = $task->process
@@ -78,26 +127,17 @@
                                 ->get();
                         }
 
-                        /**
-                         * FIX: Aggregate minutes across ALL entries per user,
-                         * but keep the latest row for comment/status display.
-                         * We attach "aggregated_spent_time" to that latest row.
-                         */
                         $progressByUser = $progressForTask
                             ->groupBy('user_id')
                             ->map(function ($rows) {
                                 $latest = $rows->sortByDesc('created_at')->first();
                                 $sumHours = $rows
                                     ->whereNotNull('spent_time')
-                                    ->sum('spent_time'); // sum as float
-
-                                // attach aggregate to the latest row object for convenient access
+                                    ->sum('spent_time');
                                 $latest->aggregated_spent_time = $sumHours;
-
                                 return $latest;
                             });
 
-                        // Sum ONLY for users we actually list in "Strādāja"
                         $displayUserIds = $byUser->pluck('id')->filter()->all();
                         $totalSpent = collect($displayUserIds)
                             ->map(fn($uid) => optional($progressByUser->get($uid))->aggregated_spent_time)
@@ -136,7 +176,6 @@
                                 <ul class="list-disc ml-5 text-sm mt-1">
                                     @foreach ($task->files as $file)
                                         <li class="flex items-center gap-2">
-                                            {{-- View link (prefer controller route if exists, fallback to /storage) --}}
                                             @if (Route::has('process-files.view'))
                                                 <a href="{{ route('process-files.view', $file) }}"
                                                    target="_blank"

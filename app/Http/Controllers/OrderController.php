@@ -181,7 +181,7 @@ class OrderController extends Controller
 
         $order->save();
 
-        return redirect()->route('orders.index')->with('success', 'Pasūtījums atjaunināts veiksmīgi!');
+        return redirect()->route('orders.show', $order->id)->with('success', 'Pasūtījums atjaunināts veiksmīgi!');
     }
 
     public function destroy(Order $order)

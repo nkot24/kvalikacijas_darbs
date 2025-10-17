@@ -165,7 +165,7 @@ class ProductionController extends Controller
             DB::commit();
 
             return redirect()
-                ->route('productions.index')
+                ->route('orders.show', $production->order_id)
                 ->with('success', 'Ražošana izveidota veiksmīgi.');
         } catch (\Throwable $e) {
             DB::rollBack();
@@ -396,7 +396,7 @@ class ProductionController extends Controller
         });
 
         return redirect()
-            ->route('productions.show', $production)
+            ->route('orders.show', $production->order_id)
             ->with('success', 'Ražošana atjaunināta.');
     }
 
