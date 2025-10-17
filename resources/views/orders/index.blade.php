@@ -93,15 +93,18 @@
                                 class="cursor-pointer hover:bg-gray-100 transition-colors"
                                 title="Klikšķiniet, lai atvērtu pasūtījumu"
                             >
-                                <td class="border px-4 py-2">{{ $order->pasutijuma_numurs }}</td>
-                                <td class="border px-4 py-2">{{ $order->datums }}</td>
-                                <td class="border px-4 py-2">{{ $order->client->nosaukums ?? $order->klients }}</td>
-                                <td class="border px-4 py-2">{{ $order->product->nosaukums ?? $order->produkts }}</td>
-                                <td class="border px-4 py-2">{{ $order->daudzums }}</td>
-                                <td class="border px-4 py-2">{{ $order->izpildes_datums }}</td>
-                                <td class="border px-4 py-2">{{ $order->prioritāte }}</td>
-                                <td class="border px-4 py-2">{{ $order->statuss }}</td>
-                                <td class="border px-4 py-2">{{ $order->piezimes ?? '-' }}</td>
+                                <td class="border px-4 py-2 max-w-[180px] truncate whitespace-nowrap">{{ $order->pasutijuma_numurs }}</td>
+                                <td class="border px-4 py-2 max-w-[180px] truncate whitespace-nowrap">{{ $order->datums }}</td>
+                                <td class="border px-4 py-2 max-w-[200px] truncate whitespace-nowrap">{{ $order->client->nosaukums ?? $order->klients }}</td>
+                                <td class="border px-4 py-2 max-w-[200px] truncate whitespace-nowrap">{{ $order->product->nosaukums ?? $order->produkts }}</td>
+                                <td class="border px-4 py-2 max-w-[100px] truncate whitespace-nowrap">{{ $order->daudzums }}</td>
+                                <td class="border px-4 py-2 max-w-[180px] truncate whitespace-nowrap">{{ $order->izpildes_datums }}</td>
+                                <td class="border px-4 py-2 max-w-[120px] truncate whitespace-nowrap">{{ $order->prioritāte }}</td>
+                                
+                                {{-- 🔹 Widened Status column --}}
+                                <td class="border px-4 py-2 max-w-[220px] truncate whitespace-nowrap">{{ $order->statuss }}</td>
+                                
+                                <td class="border px-4 py-2 max-w-[250px] truncate whitespace-nowrap">{{ $order->piezimes ?? '-' }}</td>
                             </tr>
                         @empty
                             <tr>
@@ -109,6 +112,7 @@
                             </tr>
                         @endforelse
                     </tbody>
+
                 </table>
             </div>
 
