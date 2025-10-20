@@ -44,7 +44,7 @@ class OrderController extends Controller
             $query->orderBy($sort, $direction);
         }
 
-        $orders = $query->paginate(15)->appends($request->all());
+        $orders = $query->paginate(50)->appends($request->all());
 
         return view('orders.index', compact('orders'));
         }

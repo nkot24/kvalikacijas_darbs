@@ -75,36 +75,36 @@
                 <table class="table-auto w-full min-w-[1000px] border-collapse border border-gray-300 bg-white">
                     <thead>
                         <tr>
-                            <th class="border px-4 py-2">{!! sortLink('pasutijuma_numurs', 'Pasūtījuma numurs') !!}</th>
-                            <th class="border px-4 py-2">{!! sortLink('datums', 'Datums') !!}</th>
-                            <th class="border px-4 py-2">{!! sortLink('klients', 'Klients') !!}</th>
-                            <th class="border px-4 py-2">Produkts</th>
-                            <th class="border px-4 py-2">{!! sortLink('daudzums', 'Daudzums') !!}</th>
-                            <th class="border px-4 py-2">{!! sortLink('izpildes_datums', 'Izpildes datums') !!}</th>
-                            <th class="border px-4 py-2">{!! sortLink('prioritāte', 'Prioritāte') !!}</th>
-                            <th class="border px-4 py-2">{!! sortLink('statuss', 'Statuss') !!}</th>
-                            <th class="border px-4 py-2">Piezīmes</th>
+                            <th class="border px-3 py-1 max-w-[180px] truncate whitespace-nowrap text-sm">{!! sortLink('pasutijuma_numurs', 'Pasūtījuma numurs') !!}</th>
+                            <th class="border px-3 py-1 max-w-[180px] truncate whitespace-nowrap text-sm">{!! sortLink('datums', 'Datums') !!}</th>
+                            <th class="border px-3 py-1 max-w-[200px] truncate whitespace-nowrap text-sm">{!! sortLink('klients', 'Klients') !!}</th>
+                            <th class="border px-3 py-1 max-w-[200px] truncate whitespace-nowrap text-sm">Produkts</th>
+                            <th class="border px-3 py-1 max-w-[100px] truncate whitespace-nowrap text-sm">{!! sortLink('daudzums', 'Daudzums') !!}</th>
+                            <th class="border px-3 py-1 max-w-[180px] truncate whitespace-nowrap text-sm">{!! sortLink('izpildes_datums', 'Izpildes datums') !!}</th>
+                            <th class="border px-3 py-1 max-w-[120px] truncate whitespace-nowrap text-sm">{!! sortLink('prioritāte', 'Prioritāte') !!}</th>
+                            <th class="border px-3 py-1 max-w-[220px] truncate whitespace-nowrap text-sm">{!! sortLink('statuss', 'Statuss') !!}</th>
+                            <th class="border px-3 py-1 max-w-[250px] truncate whitespace-nowrap text-sm">Piezīmes</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($orders as $order)
                             <tr 
                                 onclick="window.location='{{ route('orders.show', $order->id) }}'"
-                                class="cursor-pointer hover:bg-gray-100 transition-colors"
+                                class="cursor-pointer transition-colors even:bg-yellow-50 odd:bg-white hover:bg-gray-100"
                                 title="Klikšķiniet, lai atvērtu pasūtījumu"
                             >
-                                <td class="border px-4 py-2 max-w-[180px] truncate whitespace-nowrap">{{ $order->pasutijuma_numurs }}</td>
-                                <td class="border px-4 py-2 max-w-[180px] truncate whitespace-nowrap">{{ $order->datums }}</td>
-                                <td class="border px-4 py-2 max-w-[200px] truncate whitespace-nowrap">{{ $order->client->nosaukums ?? $order->klients }}</td>
-                                <td class="border px-4 py-2 max-w-[200px] truncate whitespace-nowrap">{{ $order->product->nosaukums ?? $order->produkts }}</td>
-                                <td class="border px-4 py-2 max-w-[100px] truncate whitespace-nowrap">{{ $order->daudzums }}</td>
-                                <td class="border px-4 py-2 max-w-[180px] truncate whitespace-nowrap">{{ $order->izpildes_datums }}</td>
-                                <td class="border px-4 py-2 max-w-[120px] truncate whitespace-nowrap">{{ $order->prioritāte }}</td>
-                                
+                                <td class="border px-3 py-1 max-w-[180px] truncate whitespace-nowrap text-sm">{{ $order->pasutijuma_numurs }}</td>
+                                <td class="border px-3 py-1 max-w-[180px] truncate whitespace-nowrap text-sm">{{ $order->datums }}</td>
+                                <td class="border px-3 py-1 max-w-[200px] truncate whitespace-nowrap text-sm">{{ $order->client->nosaukums ?? $order->klients }}</td>
+                                <td class="border px-3 py-1 max-w-[200px] truncate whitespace-nowrap text-sm">{{ $order->product->nosaukums ?? $order->produkts }}</td>
+                                <td class="border px-3 py-1 max-w-[100px] truncate whitespace-nowrap text-sm text-center">{{ $order->daudzums }}</td>
+                                <td class="border px-3 py-1 max-w-[180px] truncate whitespace-nowrap text-sm">{{ $order->izpildes_datums }}</td>
+                                <td class="border px-3 py-1 max-w-[120px] truncate whitespace-nowrap text-sm">{{ $order->prioritāte }}</td>
+
                                 {{-- 🔹 Widened Status column --}}
-                                <td class="border px-4 py-2 max-w-[220px] truncate whitespace-nowrap">{{ $order->statuss }}</td>
-                                
-                                <td class="border px-4 py-2 max-w-[250px] truncate whitespace-nowrap">{{ $order->piezimes ?? '-' }}</td>
+                                <td class="border px-3 py-1 max-w-[220px] truncate whitespace-nowrap text-sm">{{ $order->statuss }}</td>
+
+                                <td class="border px-3 py-1 max-w-[250px] truncate whitespace-nowrap text-sm">{{ $order->piezimes ?? '-' }}</td>
                             </tr>
                         @empty
                             <tr>
