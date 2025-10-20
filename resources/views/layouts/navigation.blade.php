@@ -31,14 +31,8 @@
                                     <x-dropdown-link :href="route('orders.index')" :active="request()->routeIs('orders.*')">
                                         {{ __('Pasūtijumi') }}
                                     </x-dropdown-link>
-                                    <x-dropdown-link :href="route('productions.index')" :active="request()->routeIs('productions.*')">
-                                        {{ __('Ražošana') }}
-                                    </x-dropdown-link>
                                     <x-dropdown-link :href="route('tasks.index')" :active="request()->routeIs('tasks.*')">
                                         {{ __('Uzdevumi') }}
-                                    </x-dropdown-link>
-                                    <x-dropdown-link :href="route('avansa_rekini.create')" :active="request()->routeIs('avansa_rekini.*')">
-                                        {{ __('Avansa rēķins') }}
                                     </x-dropdown-link>
                                     <x-dropdown-link :href="route('orderList.index')" :active="request()->routeIs('orderList.*')">
                                         {{ __('Iepirkuma saraksts') }}
@@ -158,28 +152,22 @@
                         {{ __('Dashboard') }}
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('orders.index')" :active="request()->routeIs('orders.*')">
-                        {{ __('Orders') }}
+                        {{ __('Pasūtījumi') }}
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('clients.index')" :active="request()->routeIs('clients.*')">
-                        {{ __('Clients') }}
+                        {{ __('Klienti') }}
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('products.index')" :active="request()->routeIs('products.*')">
-                        {{ __('Products') }}
+                        {{ __('Produkti') }}
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
-                        {{ __('Users') }}
+                        {{ __('Lietotāji') }}
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('processes.index')" :active="request()->routeIs('processes.*')">
-                        {{ __('Processes') }}
-                    </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('productions.index')" :active="request()->routeIs('productions.*')">
-                        {{ __('Productions') }}
+                        {{ __('Procesi') }}
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('tasks.index')" :active="request()->routeIs('tasks.*')">
-                        {{ __('Tasks') }}
-                    </x-responsive-nav-link>
-                    <x-responsive-nav-link :href="route('avansa_rekini.create')" :active="request()->routeIs('avansa_rekini.*')">
-                        {{ __('Avansa rēķins') }}
+                        {{ __('Uzdevumi') }}
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('orderList.index')" :active="request()->routeIs('orderList.*')">
                         {{ __('Iepirkuma saraksts') }}
