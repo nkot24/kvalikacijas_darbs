@@ -45,4 +45,5 @@ class Production extends Model
             $q->whereNotIn('status', self::DONE_STATUSES);
         });
     }
+    
 }

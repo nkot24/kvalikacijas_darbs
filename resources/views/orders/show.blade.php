@@ -149,12 +149,26 @@
                         <div class="flex items-start justify-between">
                             <div>
                                 <div><strong>Process:</strong> {{ data_get($task, 'process.processa_nosaukums', '-') }}</div>
+                                @php
+                                    $processUsers = $task->process->users->pluck('id')->toArray();
+                                    $assignedUsers = $task->assignedUsers->pluck('id')->toArray();
+                                    $assignedNames = $task->assignedUsers->pluck('name')->toArray();
+                                    $isSharedWithAll = count(array_diff($processUsers, $assignedUsers)) === 0;
+                                @endphp
+
                                 <div class="text-sm text-gray-700">
-                                    <strong>Lietotājs:</strong>
-                                    @if ($task->user) {{ $task->user->name }}
-                                    @else <span class="text-blue-600">Kopīgs uzdevums</span>
+                                    <strong>Lietotāji:</strong>
+                                    @if ($task->user_id !== null)
+                                        {{ $task->user->name ?? 'Nezināms lietotājs' }}
+                                    @else
+                                        @if ($isSharedWithAll)
+                                            <span class="text-blue-600">(Kopīgs uzdevums)</span>
+                                        @else
+                                            <span class="text-blue-600">({{ implode(', ', $assignedNames) }})</span>
+                                        @endif
                                     @endif
                                 </div>
+
                             </div>
                             <span class="px-2 py-1 text-xs rounded
                                   {{ $task->status === 'pabeigts' ? 'bg-green-100 text-green-800' : 'bg-gray-100' }}">

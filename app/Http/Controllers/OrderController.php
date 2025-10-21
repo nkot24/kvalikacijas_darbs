@@ -181,6 +181,40 @@ class OrderController extends Controller
 
         $order->save();
 
+        // ✅ If order is completed, delete its production with all related data
+        if ($order->statuss === 'pabeigts' && $order->production) {
+            $production = $order->production;
+
+            // Delete all task files first
+            foreach ($production->tasks as $task) {
+                foreach ($task->files as $file) {
+                    try {
+                        \Illuminate\Support\Facades\Storage::disk('public')->delete($file->path);
+                    } catch (\Throwable $e) {
+                        // ignore storage deletion errors
+                    }
+                    $file->delete();
+                }
+
+                // Detach assigned users (pivot table)
+                if (method_exists($task, 'assignedUsers')) {
+                    $task->assignedUsers()->detach();
+                }
+
+                // Delete the task itself
+                $task->delete();
+            }
+
+            // Delete the production folder and record
+            try {
+                \Illuminate\Support\Facades\Storage::disk('public')->deleteDirectory("process_files/production_{$production->id}");
+            } catch (\Throwable $e) {
+                // ignore if directory missing
+            }
+
+            $production->delete();
+        }
+
         return redirect()->route('orders.show', $order->id)->with('success', 'Pasūtījums atjaunināts veiksmīgi!');
     }
 

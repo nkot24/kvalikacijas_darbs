@@ -12,22 +12,41 @@
                 <div class="border p-4 rounded mb-4">
                     <h4 class="font-bold">
                         {{ optional($task->production->order->product)->nosaukums ?? $task->production->order->produkts }}
-                        @if ($task->user_id === null)
-                            <span class="ml-2 text-sm text-blue-600">(Kopīgs uzdevums)</span>
-                        @endif
                     </h4>
+
+                    {{-- Lietotāji --}}
+                    <p>
+                        <strong>Lietotāji:</strong>
+                        @if ($task->user_id !== null)
+                            {{ $task->user->name ?? 'Nezināms lietotājs' }}
+                        @else
+                            @php
+                                $processUsers = $task->process->users->pluck('id')->toArray();
+                                $assignedUsers = $task->assignedUsers->pluck('id')->toArray();
+                                $assignedNames = $task->assignedUsers->pluck('name')->toArray();
+                                $isSharedWithAll = count(array_diff($processUsers, $assignedUsers)) === 0;
+                            @endphp
+
+                            @if ($isSharedWithAll)
+                                <span class="text-blue-600">(Kopīgs uzdevums)</span>
+                            @else
+                                <span class="text-blue-600">({{ implode(', ', $assignedNames) }})</span>
+                            @endif
+                        @endif
+                    </p>
+
                     <p><strong>Process:</strong> {{ $task->process->processa_nosaukums }}</p>
                     <p><strong>Daudzums:</strong> {{ $task->production->order->daudzums }}</p>
                     <p><strong>Piezīmes:</strong> {{ $task->production->order->piezimes ?? '-' }}</p>
                     <p><strong>Prioritāte:</strong> {{ $task->production->order->prioritāte }}</p>
                     <p><strong>Izpildes datums:</strong> {{ $task->production->order->izpildes_datums }}</p>
 
-                    {{-- Show progress --}}
+                    {{-- Progress --}}
                     <p class="mt-2 text-green-700 font-semibold">
                         Izpildītais daudzums: {{ $task->done_amount ?? 0 }} no {{ $task->production->order->daudzums }}
                     </p>
 
-                    {{-- Files attached to THIS TASK (not the process) --}}
+                    {{-- Files --}}
                     @php
                         $files = $task->relationLoaded('files')
                                 ? $task->files->sortByDesc('id')
@@ -54,7 +73,6 @@
                             </ul>
                         @endif
                     </div>
-                    {{-- /Files --}}
 
                     {{-- Update form --}}
                     <form action="{{ route('tasks.update', $task) }}" method="POST" class="mt-4 task-form">
@@ -64,40 +82,27 @@
                             <label for="status">Statuss:</label>
                             <select name="status" required class="status-select border rounded px-2 py-1"
                                     data-task-id="{{ $task->id }}">
-                                <option value="nav uzsākts" {{ $task->status == 'nav uzsākts' ? 'selected' : '' }}>
-                                    Nav uzsākts
-                                </option>
-                                <option value="daļēji pabeigts" {{ $task->status == 'daļēji pabeigts' ? 'selected' : '' }}>
-                                    Daļēji pabeigts
-                                </option>
-                                <option value="pabeigts" {{ $task->status == 'pabeigts' ? 'selected' : '' }}>
-                                    Pabeigts
-                                </option>
+                                <option value="nav uzsākts" {{ $task->status == 'nav uzsākts' ? 'selected' : '' }}>Nav uzsākts</option>
+                                <option value="daļēji pabeigts" {{ $task->status == 'daļēji pabeigts' ? 'selected' : '' }}>Daļēji pabeigts</option>
+                                <option value="pabeigts" {{ $task->status == 'pabeigts' ? 'selected' : '' }}>Pabeigts</option>
                             </select>
 
-                            {{-- Done amount input (only for daļēji pabeigts) --}}
-                            <input type="number" name="done_amount" min="0"
-                                   placeholder="Paveiktais daudzums (gab.)"
+                            <input type="number" name="done_amount" min="0" placeholder="Paveiktais daudzums (gab.)"
                                    class="done-input border rounded px-2 py-1"
                                    data-task-id="{{ $task->id }}"
                                    style="{{ $task->status == 'daļēji pabeigts' ? '' : 'display:none' }}">
 
-                            {{-- Spent time (stundas) — required for daļēji pabeigts/pabeigts --}}
-                            <input type="number" name="spent_time" min="0.01" step="0.01"
-                                    placeholder="Pavadītais laiks (stundas)"
-                                    class="spent-input border rounded px-2 py-1"
-                                    data-task-id="{{ $task->id }}"
-                                    style="{{ in_array($task->status, ['daļēji pabeigts','pabeigts']) ? '' : 'display:none' }}">
+                            <input type="number" name="spent_time" min="0.01" step="0.01" placeholder="Pavadītais laiks (stundas)"
+                                   class="spent-input border rounded px-2 py-1"
+                                   data-task-id="{{ $task->id }}"
+                                   style="{{ in_array($task->status, ['daļēji pabeigts','pabeigts']) ? '' : 'display:none' }}">
 
-                            {{-- Comment — optional --}}
-                            <input type="text" name="comment"
-                                   placeholder="Komentārs (neobligāts)"
+                            <input type="text" name="comment" placeholder="Komentārs (neobligāts)"
                                    class="comment-input border rounded px-2 py-1"
                                    data-task-id="{{ $task->id }}"
                                    style="{{ in_array($task->status, ['daļēji pabeigts','pabeigts']) ? '' : 'display:none' }}">
 
-                            <button type="submit"
-                                    class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
                                 Atjaunināt
                             </button>
                         </div>
@@ -115,22 +120,40 @@
                 <div class="border p-4 rounded mb-4">
                     <h4 class="font-bold">
                         {{ optional($task->production->order->product)->nosaukums ?? $task->production->order->produkts }}
-                        @if ($task->user_id === null)
-                            <span class="ml-2 text-sm text-blue-600">(Kopīgs uzdevums)</span>
-                        @endif
                     </h4>
+
+                    {{-- Lietotāji --}}
+                    <p>
+                        <strong>Lietotāji:</strong>
+                        @if ($task->user_id !== null)
+                            {{ $task->user->name ?? 'Nezināms lietotājs' }}
+                        @else
+                            @php
+                                $processUsers = $task->process->users->pluck('id')->toArray();
+                                $assignedUsers = $task->assignedUsers->pluck('id')->toArray();
+                                $assignedNames = $task->assignedUsers->pluck('name')->toArray();
+                                $isSharedWithAll = count(array_diff($processUsers, $assignedUsers)) === 0;
+                            @endphp
+
+                            @if ($isSharedWithAll)
+                                <span class="text-blue-600">(Kopīgs uzdevums)</span>
+                            @else
+                                <span class="text-blue-600">({{ implode(', ', $assignedNames) }})</span>
+                            @endif
+                        @endif
+                    </p>
+
                     <p><strong>Process:</strong> {{ $task->process->processa_nosaukums }}</p>
                     <p><strong>Daudzums:</strong> {{ $task->production->order->daudzums }}</p>
                     <p><strong>Piezīmes:</strong> {{ $task->production->order->piezimes ?? '-' }}</p>
                     <p><strong>Prioritāte:</strong> {{ $task->production->order->prioritāte }}</p>
                     <p><strong>Izpildes datums:</strong> {{ $task->production->order->izpildes_datums }}</p>
 
-                    {{-- Show progress (same as current tasks) --}}
                     <p class="mt-2 text-green-700 font-semibold">
                         Izpildītais daudzums: {{ $task->done_amount ?? 0 }} no {{ $task->production->order->daudzums }}
                     </p>
 
-                    {{-- Files attached to THIS TASK (same as current tasks) --}}
+                    {{-- Files --}}
                     @php
                         $files = $task->relationLoaded('files')
                                 ? $task->files->sortByDesc('id')
@@ -157,9 +180,8 @@
                             </ul>
                         @endif
                     </div>
-                    {{-- /Files --}}
 
-                    {{-- Update form (IDENTICAL to current tasks) --}}
+                    {{-- Update form --}}
                     <form action="{{ route('tasks.update', $task) }}" method="POST" class="mt-4 task-form">
                         @csrf
                         @method('PUT')
@@ -167,39 +189,27 @@
                             <label for="status">Statuss:</label>
                             <select name="status" required class="status-select border rounded px-2 py-1"
                                     data-task-id="{{ $task->id }}">
-                                <option value="nav uzsākts" {{ $task->status == 'nav uzsākts' ? 'selected' : '' }}>
-                                    Nav uzsākts
-                                </option>
-                                <option value="daļēji pabeigts" {{ $task->status == 'daļēji pabeigts' ? 'selected' : '' }}>
-                                    Daļēji pabeigts
-                                </option>
-                                <option value="pabeigts" {{ $task->status == 'pabeigts' ? 'selected' : '' }}>
-                                    Pabeigts
-                                </option>
+                                <option value="nav uzsākts" {{ $task->status == 'nav uzsākts' ? 'selected' : '' }}>Nav uzsākts</option>
+                                <option value="daļēji pabeigts" {{ $task->status == 'daļēji pabeigts' ? 'selected' : '' }}>Daļēji pabeigts</option>
+                                <option value="pabeigts" {{ $task->status == 'pabeigts' ? 'selected' : '' }}>Pabeigts</option>
                             </select>
 
-                            {{-- Done amount input (only for daļēji pabeigts) --}}
-                            <input type="number" name="done_amount" min="0"
-                                   placeholder="Paveiktais daudzums (gab.)"
+                            <input type="number" name="done_amount" min="0" placeholder="Paveiktais daudzums (gab.)"
                                    class="done-input border rounded px-2 py-1"
                                    data-task-id="{{ $task->id }}"
                                    style="{{ $task->status == 'daļēji pabeigts' ? '' : 'display:none' }}">
 
-                            {{-- Spent time (stundas) — required for daļēji pabeigts/pabeigts --}}
-                            <input type="number" name="spent_time" min="0.01" step="0.01"
-                                    placeholder="Pavadītais laiks (stundas)"
-                                    class="spent-input border rounded px-2 py-1"
-                                    data-task-id="{{ $task->id }}"
-                                    style="{{ in_array($task->status, ['daļēji pabeigts','pabeigts']) ? '' : 'display:none' }}">
-                            {{-- Comment — optional --}}
-                            <input type="text" name="comment"
-                                   placeholder="Komentārs (neobligāts)"
+                            <input type="number" name="spent_time" min="0.01" step="0.01" placeholder="Pavadītais laiks (stundas)"
+                                   class="spent-input border rounded px-2 py-1"
+                                   data-task-id="{{ $task->id }}"
+                                   style="{{ in_array($task->status, ['daļēji pabeigts','pabeigts']) ? '' : 'display:none' }}">
+
+                            <input type="text" name="comment" placeholder="Komentārs (neobligāts)"
                                    class="comment-input border rounded px-2 py-1"
                                    data-task-id="{{ $task->id }}"
                                    style="{{ in_array($task->status, ['daļēji pabeigts','pabeigts']) ? '' : 'display:none' }}">
 
-                            <button type="submit"
-                                    class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                            <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
                                 Atjaunināt
                             </button>
                         </div>
@@ -211,7 +221,7 @@
         </div>
     </div>
 
-    {{-- Toggle logic for the inputs --}}
+    {{-- JS logic for field toggles --}}
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.status-select').forEach(select => {
@@ -222,32 +232,26 @@
 
             function updateVisibility() {
                 const v = select.value;
-
-                // Show done_amount only for "daļēji pabeigts"
-                if (doneInput) {
-                    const showDone = (v === 'daļēji pabeigts');
-                    doneInput.style.display = showDone ? 'inline-block' : 'none';
-                    if (!showDone) doneInput.value = '';
-                }
-
-                // Show spent_time + comment for "daļēji pabeigts" or "pabeigts"
+                const showDone = (v === 'daļēji pabeigts');
                 const needTimeAndComment = (v === 'daļēji pabeigts' || v === 'pabeigts');
+
+                if (doneInput) doneInput.style.display = showDone ? 'inline-block' : 'none';
+                if (!showDone) doneInput.value = '';
 
                 if (spentInput) {
                     spentInput.style.display = needTimeAndComment ? 'inline-block' : 'none';
-                    spentInput.required = needTimeAndComment;   // required when shown
+                    spentInput.required = needTimeAndComment;
                     if (!needTimeAndComment) spentInput.value = '';
                 }
 
                 if (commentInput) {
                     commentInput.style.display = needTimeAndComment ? 'inline-block' : 'none';
-                    // comment is optional
                     if (!needTimeAndComment) commentInput.value = '';
                 }
             }
 
             select.addEventListener('change', updateVisibility);
-            updateVisibility(); // init on load
+            updateVisibility();
         });
     });
     </script>

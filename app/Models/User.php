@@ -67,4 +67,9 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Process::class);
     }
+    public function sharedTasks()
+    {
+        return $this->belongsToMany(Task::class, 'task_user');
+    }
+
 }

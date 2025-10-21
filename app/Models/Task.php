@@ -44,5 +44,8 @@ class Task extends Model
     {
         return $this->hasMany(ProcessFile::class);
     }
+    public function assignedUsers()
+    {
+        return $this->belongsToMany(User::class, 'task_user');
+    }
 }
-

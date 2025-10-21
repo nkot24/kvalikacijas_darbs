@@ -16,28 +16,28 @@ class TaskController extends Controller
     {
         $user = auth()->user();
 
-        // 1) Tasks assigned directly to the user (exclude finished here)
+        // 1️⃣ Personal tasks (assigned directly)
         $personalTasks = Task::with(['process', 'production.order'])
             ->where('user_id', $user->id)
-            ->where('status', '!=', 'pabeigts')   // <= add this line
+            ->where('status', '!=', 'pabeigts')
             ->get();
 
-        // 2) Shared tasks this user can work on (exclude finished here)
-        $sharedTasks = Task::with(['process.users', 'production.order'])
+        // 2️⃣ Shared tasks (one task, multiple assigned users)
+        $sharedTasks = Task::with(['assignedUsers', 'process', 'production.order'])
             ->whereNull('user_id')
-            ->where('status', '!=', 'pabeigts')   // <= add this line
-            ->get()
-            ->filter(function ($task) use ($user) {
-                return $task->process && $task->process->users->contains('id', $user->id);
-            });
+            ->where('status', '!=', 'pabeigts')
+            ->whereHas('assignedUsers', function ($q) use ($user) {
+                $q->where('users.id', $user->id);
+            })
+            ->get();
 
-        // Combine both task types
+        // 3️⃣ Combine all visible tasks
         $allTasks = $personalTasks->concat($sharedTasks);
 
         $currentTasks = collect();
         $futureTasks  = collect();
 
-        // Group by production and decide which process is "unlocked" (first not fully done)
+        // 4️⃣ Group by production and find which process is "unlocked"
         $tasksByProduction = $allTasks->groupBy('production_id');
 
         foreach ($tasksByProduction as $groupedTasks) {
@@ -65,12 +65,12 @@ class TaskController extends Controller
             }
         }
 
-        // Same variables your ZIP view expects
         return view('tasks.index', [
             'currentTasks' => $currentTasks,
             'futureTasks'  => $futureTasks,
         ]);
     }
+
 
     public function show(Task $task)
     {
