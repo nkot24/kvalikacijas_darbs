@@ -13,7 +13,7 @@
             <form method="GET" 
                   class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 items-end"
                   x-data="{ 
-                      search: '{{ optional($users->firstWhere('id', request('user_id')))->name ?? '' }}',
+                      search: '{{ request('user_id') === 'all' ? 'Visi' : (optional($users->firstWhere('id', request('user_id')))->name ?? '') }}',
                       open: false 
                   }">
 
@@ -33,6 +33,16 @@
 
                     <ul x-show="open" x-transition
                         class="absolute left-0 right-0 z-20 mt-1 bg-white border rounded shadow max-h-60 overflow-auto">
+                        {{-- ✅ Add "Visi" (All users) option --}}
+                        <li @click="
+                                search='Visi';
+                                document.getElementById('user_id').value='all';
+                                open=false;
+                            "
+                            class="px-3 py-2 cursor-pointer hover:bg-blue-50">
+                            Visi
+                        </li>
+
                         @foreach ($users as $u)
                             <li @click="
                                     search='{{ $u->name }}';
@@ -83,40 +93,74 @@
 
             {{-- ✅ Work logs table --}}
             @if ($logs->count())
-                <div class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
-                    <table class="min-w-full text-center">
-                        <thead class="bg-gray-100 text-gray-800">
-                            <tr>
-                                <th class="px-4 py-2 border-b">Datums</th>
-                                <th class="px-4 py-2 border-b">Sāka darbu</th>
-                                <th class="px-4 py-2 border-b">Beidza darbu</th>
-                                <th class="px-4 py-2 border-b">Kopā stundas (ar pusdienām)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($logs as $log)
-                                @php
-                                    $displayDate = \Carbon\Carbon::parse($log->date)->format('Y-m-d');
-                                    $hoursClass = $log->adjusted_hours >= 8 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold';
-                                @endphp
-                                <tr class="hover:bg-gray-50 transition-colors">
-                                    <td class="px-4 py-2 border-b">{{ $displayDate }}</td>
-                                    <td class="px-4 py-2 border-b">{{ $log->start_time ?? '-' }}</td>
-                                    <td class="px-4 py-2 border-b">{{ $log->end_time ?? '-' }}</td>
-                                    <td class="px-4 py-2 border-b {{ $hoursClass }}">
-                                        {{ number_format($log->adjusted_hours, 2) }}
+                @if (request('user_id') === 'all')
+                    {{-- ✅ Show summary for all users --}}
+                    <div class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+                        <table class="min-w-full text-center">
+                            <thead class="bg-gray-100 text-gray-800">
+                                <tr>
+                                    <th class="px-4 py-2 border-b">Lietotājs</th>
+                                    <th class="px-4 py-2 border-b">Kopā stundas (ar pusdienām)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($userTotals as $userId => $hours)
+                                    @php
+                                        $user = $users->firstWhere('id', $userId);
+                                    @endphp
+                                    <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="px-4 py-2 border-b">{{ $user->name ?? 'Dzēsts lietotājs' }}</td>
+                                        <td class="px-4 py-2 border-b text-indigo-700 font-semibold">
+                                            {{ number_format($hours, 2) }}
+                                        </td>
+                                    </tr>
+                                @endforeach
+                                <tr class="bg-indigo-50 font-semibold">
+                                    <td class="text-right px-4 py-2 border-t border-gray-300">Kopā:</td>
+                                    <td class="px-4 py-2 border-t border-gray-300 text-indigo-700">
+                                        {{ number_format($totalHours, 2) }}
                                     </td>
                                 </tr>
-                            @endforeach
-                            <tr class="bg-indigo-50 font-semibold">
-                                <td colspan="3" class="text-right px-4 py-2 border-t border-gray-300">Kopā:</td>
-                                <td class="px-4 py-2 border-t border-gray-300 text-indigo-700">
-                                    {{ number_format($totalHours, 2) }}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    {{-- ✅ Regular table for single user --}}
+                    <div class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+                        <table class="min-w-full text-center">
+                            <thead class="bg-gray-100 text-gray-800">
+                                <tr>
+                                    <th class="px-4 py-2 border-b">Datums</th>
+                                    <th class="px-4 py-2 border-b">Sāka darbu</th>
+                                    <th class="px-4 py-2 border-b">Beidza darbu</th>
+                                    <th class="px-4 py-2 border-b">Kopā stundas (ar pusdienām)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($logs as $log)
+                                    @php
+                                        $displayDate = \Carbon\Carbon::parse($log->date)->format('Y-m-d');
+                                        $hoursClass = $log->adjusted_hours >= 8 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold';
+                                    @endphp
+                                    <tr class="hover:bg-gray-50 transition-colors">
+                                        <td class="px-4 py-2 border-b">{{ $displayDate }}</td>
+                                        <td class="px-4 py-2 border-b">{{ $log->start_time ?? '-' }}</td>
+                                        <td class="px-4 py-2 border-b">{{ $log->end_time ?? '-' }}</td>
+                                        <td class="px-4 py-2 border-b {{ $hoursClass }}">
+                                            {{ number_format($log->adjusted_hours, 2) }}
+                                        </td>
+                                    </tr>
+                                @endforeach
+                                <tr class="bg-indigo-50 font-semibold">
+                                    <td colspan="3" class="text-right px-4 py-2 border-t border-gray-300">Kopā:</td>
+                                    <td class="px-4 py-2 border-t border-gray-300 text-indigo-700">
+                                        {{ number_format($totalHours, 2) }}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
             @elseif(request()->filled('user_id'))
                 <p class="text-center text-gray-600 mt-4">Dati nav atrasti šim periodam.</p>
             @endif

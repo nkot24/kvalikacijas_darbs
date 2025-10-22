@@ -68,22 +68,27 @@ class WorkLogController extends Controller
         $lunchMinutes = (int) ($request->lunch_minutes ?? 0);
 
         if ($request->filled('user_id') && $request->filled('from') && $request->filled('to')) {
-            $logs = WorkLog::where('user_id', $request->user_id)
-                ->whereBetween('date', [$request->from, $request->to])
-                ->orderBy('date', 'asc')
-                ->get();
+            if ($request->user_id === 'all') {
+                $logs = WorkLog::whereBetween('date', [$request->from, $request->to])
+                    ->orderBy('user_id')
+                    ->orderBy('date', 'asc')
+                    ->get();
+            } else {
+                $logs = WorkLog::where('user_id', $request->user_id)
+                    ->whereBetween('date', [$request->from, $request->to])
+                    ->orderBy('date', 'asc')
+                    ->get();
+            }
 
             foreach ($logs as $log) {
                 $log->adjusted_hours = 0;
 
                 if (!empty($log->start_time) && !empty($log->end_time)) {
                     try {
-                        // ✅ Ensure date is plain string (not Carbon object)
                         $date = $log->date instanceof Carbon
                             ? $log->date->format('Y-m-d')
                             : (string) $log->date;
 
-                        // ✅ Parse as local times and normalize for calculation
                         $start = Carbon::createFromFormat('Y-m-d H:i:s', "{$date} {$log->start_time}", 'Europe/Riga')
                             ->setTimezone('UTC');
                         $end = Carbon::createFromFormat('Y-m-d H:i:s', "{$date} {$log->end_time}", 'Europe/Riga')
@@ -104,10 +109,17 @@ class WorkLogController extends Controller
                     }
                 }
             }
+
+            // ✅ Group totals per user when "Visi" selected
+            if ($request->user_id === 'all') {
+                $userTotals = $logs->groupBy('user_id')->map(function ($userLogs) {
+                    return $userLogs->sum('adjusted_hours');
+                });
+
+                return view('work.work_hours', compact('users', 'logs', 'totalHours', 'lunchMinutes', 'userTotals'));
+            }
         }
 
         return view('work.work_hours', compact('users', 'logs', 'totalHours', 'lunchMinutes'));
     }
-
-
 }
