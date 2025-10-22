@@ -35,13 +35,18 @@ class WorkLog extends Model
         $minutes = $carbon->minute;
 
         $roundedMinutes = match (true) {
-            $minutes < 5 || $minutes >= 55 => 0,
+            $minutes < 5 => 0,
             $minutes < 15 => 10,
             $minutes < 25 => 20,
             $minutes < 35 => 30,
             $minutes < 45 => 40,
-            default => 50,
+            $minutes < 55 => 50,
+            default => 0, // for 55–59, reset to 0 and add an hour
         };
+
+        if ($minutes >= 55) {
+            $carbon->addHour();
+        }
 
         return $carbon->setMinute($roundedMinutes)->setSecond(0)->format('H:i:s');
     }
