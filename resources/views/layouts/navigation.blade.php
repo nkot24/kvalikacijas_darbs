@@ -40,6 +40,9 @@
                                     <x-dropdown-link :href="route('inventory.scan')" :active="request()->routeIs('inventory.*')">
                                         {{ __('Skenēt saražoto produkciju') }}
                                     </x-dropdown-link>
+                                    <x-dropdown-link :href="route('inventory.materials.scan')" :active="request()->routeIs('inventory.materials.*')">
+                                        {{ __('Norakstīšana') }}
+                                    </x-dropdown-link>
                                     <x-dropdown-link :href="route('work.index')" :active="request()->routeIs('work.*')">
                                         {{ __('Sākt/beigt darbu') }}
                                     </x-dropdown-link>
@@ -66,6 +69,9 @@
                                     </x-dropdown-link>
                                     <x-dropdown-link :href="route('inventory.transfers.index')" :active="request()->routeIs('inventory.*')">
                                         {{ __('Saražotā produkcija') }}
+                                    </x-dropdown-link>
+                                    <x-dropdown-link :href="route('inventory.materials.index')" :active="request()->routeIs('inventory.materials.*')">
+                                        {{ __('Izmantotie materiāli') }}
                                     </x-dropdown-link>
                                     <x-dropdown-link :href="route('work.hours')" :active="request()->routeIs('work.*')">
                                         {{ __('Darba stundas') }}
@@ -181,8 +187,14 @@
                     <x-responsive-nav-link :href="route('inventory.transfers.index')" :active="request()->routeIs('inventory.*')">
                         {{ __('Saražotā produkcija') }}
                     </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('inventory.materials.index')" :active="request()->routeIs('inventory.materials.*')">
+                        {{ __('Izmantotie materiāli') }}
+                    </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('inventory.scan')" :active="request()->routeIs('inventory.*')">
                         {{ __('Skenēt saražoto produkciju') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('inventory.materials.scan')" :active="request()->routeIs('inventory.materials.*')">
+                        {{ __('Norakstīšana') }}
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('work.index')" :active="request()->routeIs('work.*')">
                         {{ __('Sākt/beigt darbu') }}
@@ -291,6 +303,9 @@
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('inventory.scan')" :active="request()->routeIs('inventory.*')">
                         {{ __('Skenēt saražoto produkciju') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('inventory.materials.scan')" :active="request()->routeIs('inventory.materials.*')">
+                        {{ __('Norakstīšana') }}
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('work.index')" :active="request()->routeIs('work.*')">
                         {{ __('Darba stundas') }}

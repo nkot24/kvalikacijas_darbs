@@ -15,6 +15,7 @@ use App\Http\Controllers\ProcessFileController;
 use App\Http\Controllers\OrderListController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\WorkLogController;
+use App\Http\Controllers\MaterialScanController;
 use App\Models\WorkLog;
 use Illuminate\Support\Facades\Auth;
 
@@ -84,6 +85,14 @@ Route::middleware('auth')->group(function () {
     Route::post('/darbs/sakt', [WorkLogController::class, 'startWork'])->name('work.start');
     Route::post('/darbs/beigt', [WorkLogController::class, 'endWork'])->name('work.end');
     Route::get('/darbs/stundas', [WorkLogController::class, 'workHoursView'])->name('work.hours');
+
+    Route::prefix('inventory/materials')->name('inventory.materials.')->group(function () {
+        Route::get('/scan', [MaterialScanController::class, 'scanView'])->name('scan');
+        Route::post('/store', [MaterialScanController::class, 'storeScan'])->name('store');
+        Route::get('/', [MaterialScanController::class, 'index'])->name('index');
+        Route::patch('/account', [MaterialScanController::class, 'bulkAccount'])->name('account');
+        Route::delete('/delete', [MaterialScanController::class, 'bulkDelete'])->name('delete');
+    });
 
 
 
