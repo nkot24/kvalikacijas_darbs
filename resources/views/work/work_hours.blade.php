@@ -33,7 +33,6 @@
 
                     <ul x-show="open" x-transition
                         class="absolute left-0 right-0 z-20 mt-1 bg-white border rounded shadow max-h-60 overflow-auto">
-                        {{-- ✅ Add "Visi" (All users) option --}}
                         <li @click="
                                 search='Visi';
                                 document.getElementById('user_id').value='all';
@@ -139,18 +138,41 @@
                             <tbody>
                                 @foreach ($logs as $log)
                                     @php
-                                        $displayDate = \Carbon\Carbon::parse($log->date)->format('Y-m-d');
-                                        $hoursClass = $log->adjusted_hours >= 8 ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold';
+                                        // Safely handle both Carbon and string date values
+                                        $displayDate = $log->date instanceof \Carbon\Carbon
+                                            ? $log->date->format('Y-m-d')
+                                            : \Carbon\Carbon::parse($log->date)->format('Y-m-d');
+
+                                        $hoursClass = $log->adjusted_hours >= 8
+                                            ? 'text-green-600 font-semibold'
+                                            : 'text-red-600 font-semibold';
                                     @endphp
+
                                     <tr class="hover:bg-gray-50 transition-colors">
                                         <td class="px-4 py-2 border-b">{{ $displayDate }}</td>
-                                        <td class="px-4 py-2 border-b">{{ $log->start_time ?? '-' }}</td>
-                                        <td class="px-4 py-2 border-b">{{ $log->end_time ?? '-' }}</td>
+
+                                        {{-- ✅ Editable start_time --}}
+                                        <td class="px-4 py-2 border-b cursor-pointer hover:bg-blue-50"
+                                            data-editable="true"
+                                            data-id="{{ $log->id }}"
+                                            data-column="start_time">
+                                            {{ $log->start_time ?? '-' }}
+                                        </td>
+
+                                        {{-- ✅ Editable end_time --}}
+                                        <td class="px-4 py-2 border-b cursor-pointer hover:bg-blue-50"
+                                            data-editable="true"
+                                            data-id="{{ $log->id }}"
+                                            data-column="end_time">
+                                            {{ $log->end_time ?? '-' }}
+                                        </td>
+
                                         <td class="px-4 py-2 border-b {{ $hoursClass }}">
                                             {{ number_format($log->adjusted_hours, 2) }}
                                         </td>
                                     </tr>
                                 @endforeach
+
                                 <tr class="bg-indigo-50 font-semibold">
                                     <td colspan="3" class="text-right px-4 py-2 border-t border-gray-300">Kopā:</td>
                                     <td class="px-4 py-2 border-t border-gray-300 text-indigo-700">
@@ -166,4 +188,72 @@
             @endif
         </div>
     </div>
+
+    {{-- ✅ Inline editing script --}}
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const editableCells = document.querySelectorAll('[data-editable="true"]');
+
+        editableCells.forEach(cell => {
+            cell.addEventListener('dblclick', () => {
+                const originalValue = cell.textContent.trim().replace('-', '');
+                const logId = cell.dataset.id;
+                const column = cell.dataset.column;
+
+                const input = document.createElement('input');
+                input.type = 'time';
+                input.value = originalValue || '';
+                input.className = 'border border-indigo-400 rounded px-1 py-0.5 text-center';
+                cell.innerHTML = '';
+                cell.appendChild(input);
+                input.focus();
+
+                // ✅ Function to save
+                const saveTime = async () => {
+                    const newValue = input.value;
+                    if (!newValue) {
+                        cell.textContent = originalValue || '-';
+                        return;
+                    }
+
+                    try {
+                        const res = await fetch(`/work-log/update-time/${logId}`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify({ column, value: newValue })
+                        });
+
+                        const data = await res.json();
+                        if (data.success) {
+                            cell.textContent = newValue;
+                            cell.classList.add('bg-green-100');
+                            setTimeout(() => cell.classList.remove('bg-green-100'), 1000);
+                        } else {
+                            cell.textContent = originalValue || '-';
+                            alert('Kļūda saglabājot!');
+                        }
+                    } catch (error) {
+                        cell.textContent = originalValue || '-';
+                        error.text().then(txt => alert('Servera kļūda: ' + txt));
+                    }
+                };
+
+                // ✅ Save on blur
+                input.addEventListener('blur', saveTime);
+
+                // ✅ Save on Enter
+                input.addEventListener('keydown', e => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        input.blur(); // triggers saveTime()
+                    }
+                });
+            });
+        });
+    });
+    </script>
+
 </x-app-layout>

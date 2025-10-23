@@ -26,7 +26,7 @@ class WorkLogController extends Controller
     {
         $user = Auth::user();
         $today = Carbon::now('Europe/Riga')->toDateString();
-        $now = WorkLog::roundTimeTo10Min(Carbon::now('Europe/Riga'));
+        $now = Carbon::now('Europe/Riga')->format('H:i:s');
 
         WorkLog::updateOrCreate(
             ['user_id' => $user->id, 'date' => $today],
@@ -40,7 +40,7 @@ class WorkLogController extends Controller
     {
         $user = Auth::user();
         $today = Carbon::now('Europe/Riga')->toDateString();
-        $now = WorkLog::roundTimeTo10Min(Carbon::now('Europe/Riga'));
+        $now = Carbon::now('Europe/Riga')->format('H:i:s');
 
         $log = WorkLog::where('user_id', $user->id)
             ->where('date', $today)
@@ -49,11 +49,12 @@ class WorkLogController extends Controller
         if ($log && $log->start_time) {
             $start = Carbon::parse($log->start_time);
             $end = Carbon::parse($now);
+
             $hours = $end->floatDiffInHours($start);
 
             $log->update([
                 'end_time' => $now,
-                'hours_worked' => $hours,
+                'hours_worked' => round($hours, 2),
             ]);
         }
 
@@ -89,10 +90,8 @@ class WorkLogController extends Controller
                             ? $log->date->format('Y-m-d')
                             : (string) $log->date;
 
-                        $start = Carbon::createFromFormat('Y-m-d H:i:s', "{$date} {$log->start_time}", 'Europe/Riga')
-                            ->setTimezone('UTC');
-                        $end = Carbon::createFromFormat('Y-m-d H:i:s', "{$date} {$log->end_time}", 'Europe/Riga')
-                            ->setTimezone('UTC');
+                        $start = Carbon::createFromFormat('Y-m-d H:i:s', "{$date} {$log->start_time}", 'Europe/Riga');
+                        $end = Carbon::createFromFormat('Y-m-d H:i:s', "{$date} {$log->end_time}", 'Europe/Riga');
 
                         if ($end->lessThan($start)) {
                             $end->addDay();
@@ -102,7 +101,8 @@ class WorkLogController extends Controller
                         $hours = $minutesWorked / 60;
                         $adjusted = max(0, $hours - ($lunchMinutes / 60));
 
-                        $log->adjusted_hours = round($adjusted, 2);
+                        // ✅ Round total hours properly (e.g., 6.595 -> 6.60)
+                        $log->adjusted_hours = number_format(round($adjusted, 2), 2, '.', '');
                         $totalHours += $log->adjusted_hours;
                     } catch (\Exception $e) {
                         $log->adjusted_hours = 0;
@@ -122,4 +122,40 @@ class WorkLogController extends Controller
 
         return view('work.work_hours', compact('users', 'logs', 'totalHours', 'lunchMinutes'));
     }
+    public function updateTime(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'column' => 'required|in:start_time,end_time',
+            'value'  => 'required',
+        ]);
+
+        // Normalize time input (accept HH:MM or HH:MM:SS)
+        $time = \Carbon\Carbon::parse($validated['value'])->format('H:i:s');
+
+        $log = \App\Models\WorkLog::findOrFail($id);
+        $log->{$validated['column']} = $time;
+        $log->save();
+
+        // ✅ Recalculate hours if both times exist
+        if ($log->start_time && $log->end_time) {
+            $start = \Carbon\Carbon::parse($log->start_time);
+            $end   = \Carbon\Carbon::parse($log->end_time);
+
+            if ($end->lessThan($start)) {
+                $end->addDay();
+            }
+
+            $hours = $end->floatDiffInHours($start);
+            $log->hours_worked = round($hours, 2);
+            $log->save();
+        }
+
+        return response()->json([
+            'success' => true,
+            'value'   => $time,
+        ]);
+    }
+
+
+
 }

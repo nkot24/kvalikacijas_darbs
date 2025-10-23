@@ -85,6 +85,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/darbs/sakt', [WorkLogController::class, 'startWork'])->name('work.start');
     Route::post('/darbs/beigt', [WorkLogController::class, 'endWork'])->name('work.end');
     Route::get('/darbs/stundas', [WorkLogController::class, 'workHoursView'])->name('work.hours');
+    Route::patch('/work-log/update-time/{id}', [WorkLogController::class, 'updateTime'])
+    ->name('work.updateTime');
+
 
     Route::prefix('inventory/materials')->name('inventory.materials.')->group(function () {
         Route::get('/scan', [MaterialScanController::class, 'scanView'])->name('scan');
