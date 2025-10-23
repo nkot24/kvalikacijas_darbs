@@ -202,7 +202,8 @@
 
                 const input = document.createElement('input');
                 input.type = 'time';
-                input.value = originalValue || '';
+                input.step = 1; // force 24-hour format, allow seconds
+                input.value = (originalValue || '').slice(0, 8); // HH:MM:SS trimmed safely
                 input.className = 'border border-indigo-400 rounded px-1 py-0.5 text-center';
                 cell.innerHTML = '';
                 cell.appendChild(input);
