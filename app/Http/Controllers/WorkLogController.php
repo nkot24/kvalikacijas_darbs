@@ -126,20 +126,17 @@ class WorkLogController extends Controller
     {
         $validated = $request->validate([
             'column' => 'required|in:start_time,end_time',
-            'value'  => 'required',
+            'value'  => 'required|date_format:H:i:s',
         ]);
 
-        // Normalize time input (accept HH:MM or HH:MM:SS)
-        $time = \Carbon\Carbon::parse($validated['value'])->format('H:i:s');
-
         $log = \App\Models\WorkLog::findOrFail($id);
-        $log->{$validated['column']} = $time;
+        $log->{$validated['column']} = $validated['value'];
         $log->save();
 
-        // ✅ Recalculate hours if both times exist
+        // ✅ Recalculate total hours if both times exist
         if ($log->start_time && $log->end_time) {
-            $start = \Carbon\Carbon::parse($log->start_time);
-            $end   = \Carbon\Carbon::parse($log->end_time);
+            $start = \Carbon\Carbon::createFromFormat('H:i:s', $log->start_time);
+            $end   = \Carbon\Carbon::createFromFormat('H:i:s', $log->end_time);
 
             if ($end->lessThan($start)) {
                 $end->addDay();
@@ -150,11 +147,9 @@ class WorkLogController extends Controller
             $log->save();
         }
 
-        return response()->json([
-            'success' => true,
-            'value'   => $time,
-        ]);
+        return response()->json(['success' => true]);
     }
+
 
 
 
