@@ -18,6 +18,8 @@ use App\Http\Controllers\WorkLogController;
 use App\Http\Controllers\MaterialScanController;
 use App\Models\WorkLog;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 
     Route::get('/', function () {
@@ -107,5 +109,38 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+
+// 🟢 Secure auto-refresh backend route
+Route::get('/check-updates', function () {
+    // Block direct access from browser (only allow AJAX requests)
+    if (!request()->ajax()) {
+        abort(403, 'Unauthorized');
+    }
+
+    $tables = DB::select('SHOW TABLES');
+    $latest = 0;
+
+    foreach ($tables as $table) {
+        // Extract table name (MySQL returns column like "Tables_in_databasename")
+        $tableName = array_values((array) $table)[0];
+
+        // Skip tables that don’t have timestamps
+        if (!Schema::hasColumn($tableName, 'updated_at')) {
+            continue;
+        }
+
+        try {
+            $time = DB::table($tableName)->latest('updated_at')->value('updated_at');
+            if ($time && strtotime($time) > $latest) {
+                $latest = strtotime($time);
+            }
+        } catch (\Exception $e) {
+            // Ignore problematic tables
+        }
+    }
+
+    return response()->json(['last_update' => $latest]);
+})->middleware('auth');
 
 require __DIR__.'/auth.php';

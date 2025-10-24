@@ -16,13 +16,13 @@ class TaskController extends Controller
     {
         $user = auth()->user();
 
-        // 1️⃣ Personal tasks (assigned directly)
+        // 1️⃣ Personal tasks
         $personalTasks = Task::with(['process', 'production.order'])
             ->where('user_id', $user->id)
             ->where('status', '!=', 'pabeigts')
             ->get();
 
-        // 2️⃣ Shared tasks (one task, multiple assigned users)
+        // 2️⃣ Shared tasks
         $sharedTasks = Task::with(['assignedUsers', 'process', 'production.order'])
             ->whereNull('user_id')
             ->where('status', '!=', 'pabeigts')
@@ -31,13 +31,13 @@ class TaskController extends Controller
             })
             ->get();
 
-        // 3️⃣ Combine all visible tasks
+        // 3️⃣ Merge
         $allTasks = $personalTasks->concat($sharedTasks);
 
         $currentTasks = collect();
         $futureTasks  = collect();
 
-        // 4️⃣ Group by production and find which process is "unlocked"
+        // 4️⃣ Group and find "unlocked" process
         $tasksByProduction = $allTasks->groupBy('production_id');
 
         foreach ($tasksByProduction as $groupedTasks) {
@@ -65,11 +65,35 @@ class TaskController extends Controller
             }
         }
 
+        // 5️⃣ Define priority order (matches your form)
+        $priorityOrder = ['augsta' => 1, 'normāla' => 2, 'zema' => 3];
+
+        // 6️⃣ Sort collections
+        $sortFn = function ($a, $b) use ($priorityOrder) {
+            $aPriority = $priorityOrder[strtolower($a->production->order->prioritāte ?? 'zema')] ?? 4;
+            $bPriority = $priorityOrder[strtolower($b->production->order->prioritāte ?? 'zema')] ?? 4;
+
+            if ($aPriority !== $bPriority) {
+                // smaller number = higher priority
+                return $aPriority <=> $bPriority;
+            }
+
+            // If same priority → earlier date first
+            $aDate = strtotime($a->production->order->izpildes_datums ?? '2100-01-01');
+            $bDate = strtotime($b->production->order->izpildes_datums ?? '2100-01-01');
+
+            return $aDate <=> $bDate;
+        };
+
+        $currentTasks = $currentTasks->sort($sortFn)->values();
+        $futureTasks  = $futureTasks->sort($sortFn)->values();
+
         return view('tasks.index', [
             'currentTasks' => $currentTasks,
             'futureTasks'  => $futureTasks,
         ]);
     }
+
 
 
     public function show(Task $task)
