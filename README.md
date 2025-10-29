@@ -45,7 +45,7 @@ composer install
 
 ```powershell
 npm install
-npm run dev     # vai: npm run build (ražošanai)
+npm run dev     
 ```
 
 6. Izveidot lietojumprogrammas atslēgu un simbolisko linku uz storage:
