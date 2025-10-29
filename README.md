@@ -71,6 +71,9 @@ php artisan serve
 
 Pēc veiksmīgas palaišanas lietojumprogramma būs pieejama uz http://127.0.0.1:8000 (ja nav norādīts cits ports).
 
+##Login
+Kad mājaslapa tiek uzstartēta tad login name-Test password-password
+
 ## Testēšana
 
 Projektā ir konfigurēta testu vide (Pest/PHPUnit). Lai palaistu testus:
