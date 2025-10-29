@@ -1,13 +1,6 @@
 # Order Management
 
-Šis projekts ir Laravel pamatots rīks pasūtījumu un klientu pārvaldībai (Order Management).
-
-Šajā README atradīsies īss apraksts, prasības un soļi, kā palaist projektu lokāli.
-
-## Galvenais
-
--   Framework: Laravel
--   Eksporta/Importa funkcionalitāte Excel formātā (Maatwebsite/Excel)
+Šis projekts ir priekš ražošanas lai varētū pēc iespējas efektīvāk, ātrāk strādāt un ,lai varētu izsekot pasūtijumam.
 
 ## Prasības
 
@@ -100,20 +93,3 @@ Funkcionalitāte izmanto `maatwebsite/excel` bibliotēku (skatīt `composer.json
 -   Datubāzes migrācijas: `php artisan migrate`
 -   Seederi: `php artisan db:seed`
 -   Servisēšana lokāli: `php artisan serve`
-
-## Piezīmes
-
--   Ja izmanto nestandarta datubāzes portu (piem., `3307`), pārliecinies, ka `.env` laukā `DB_PORT` ir norādīts pareizais ports.
--   Windows PowerShell atbalsta `cp` kā alias uz `Copy-Item`, tāpēc daudzos piemēros redzēsi `cp` — PowerShell to apstrādās.
-
-## Ieguldījums un kļūdu ziņošana
-
-Ja vēlies palīdzēt ar uzlabojumiem vai atradi kļūdu, iesniedz pull request vai atver issue repozitorijā.
-
-## Licence
-
-Skatīt `LICENSE` (ja pieejama) repozitorijā.
-
----
-
-Ja vēlies, varu šo README paplašināt ar detalizētāku sadaļu par arhitektūru, datu modeļiem vai parastajām kļūdām un to risinājumiem.
