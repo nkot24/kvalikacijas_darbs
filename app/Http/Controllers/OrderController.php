@@ -9,59 +9,14 @@ use Illuminate\Http\Request;
 use App\Exports\OrdersFullExport;
 use App\Imports\OrdersFullImport;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Storage;
 
 class OrderController extends Controller
 {
     public function index(Request $request)
     {
-        $orders = Order::with(['client', 'product'])->latest()->get();
         $query = Order::with(['client', 'product'])->where('statuss', '!=', 'pabeigts');
 
-        // Search
-        if ($search = $request->input('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('pasutijuma_numurs', 'like', "%$search%")
-                ->orWhere('klients', 'like', "%$search%")
-                ->orWhereHas('client', fn($q) => $q->where('nosaukums', 'like', "%$search%"))
-                ->orWhereHas('product', fn($q) => $q->where('nosaukums', 'like', "%$search%"));
-            });
-        }
-
-        // Sorting
-        $sortable = ['pasutijuma_numurs', 'datums', 'daudzums', 'izpildes_datums', 'prioritāte', 'statuss', 'klients'];
-        $sort = $request->input('sort', 'datums');
-        $direction = $request->input('direction', 'asc');
-
-        if (!in_array($sort, $sortable)) {
-            $sort = 'datums';
-        }
-
-        if ($sort === 'klients') {
-            $query->leftJoin('clients', 'orders.client_id', '=', 'clients.id')
-                ->orderByRaw("COALESCE(clients.nosaukums, orders.klients) $direction")
-                ->select('orders.*');
-        } else {
-            $query->orderBy($sort, $direction);
-        }
-
-        $orders = $query->paginate(50)->appends($request->all());
-
-        return view('orders.index', compact('orders'));
-        }
-    public function complete(Request $request)
-    {
-        $query = Order::with(['client', 'product'])
-            ->where('statuss', 'pabeigts');
-
-        // Optional sorting
-        if ($sort = $request->input('sort')) {
-            $direction = $request->input('direction', 'asc');
-            $query->orderBy($sort, $direction);
-        } else {
-            $query->latest();
-        }
-
-        // Optional searching
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('pasutijuma_numurs', 'like', "%$search%")
@@ -71,23 +26,52 @@ class OrderController extends Controller
             });
         }
 
+        $sortable = ['pasutijuma_numurs', 'datums', 'daudzums', 'izpildes_datums', 'prioritāte', 'statuss', 'klients'];
+        $sort = in_array($request->input('sort'), $sortable) ? $request->input('sort') : 'datums';
+        $direction = $request->input('direction', 'asc');
+
+        if ($sort === 'klients') {
+            $query->leftJoin('clients', 'orders.client_id', '=', 'clients.id')
+                  ->orderByRaw("COALESCE(clients.nosaukums, orders.klients) $direction")
+                  ->select('orders.*');
+        } else {
+            $query->orderBy($sort, $direction);
+        }
+
+        $orders = $query->paginate(50)->appends($request->all());
+
+        return view('orders.index', compact('orders'));
+    }
+
+    public function complete(Request $request)
+    {
+        $query = Order::with(['client', 'product'])->where('statuss', 'pabeigts');
+
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('pasutijuma_numurs', 'like', "%$search%")
+                    ->orWhere('klients', 'like', "%$search%")
+                    ->orWhereHas('client', fn($q) => $q->where('nosaukums', 'like', "%$search%"))
+                    ->orWhereHas('product', fn($q) => $q->where('nosaukums', 'like', "%$search%"));
+            });
+        }
+
+        $query->orderBy($request->input('sort', 'datums'), $request->input('direction', 'desc'));
         $orders = $query->paginate(15)->appends($request->all());
 
         return view('orders.complete', compact('orders'));
     }
 
-
-
     public function create()
     {
-        $clients = Client::all();
-        $products = Product::all();
-        return view('orders.create', compact('clients', 'products'));
+        return view('orders.create', [
+            'clients' => Client::all(),
+            'products' => Product::all()
+        ]);
     }
 
     public function store(Request $request)
     {
-        // Validate fields
         $validated = $request->validate([
             'client_id' => 'nullable|string',
             'klients' => 'nullable|string|max:255',
@@ -99,30 +83,11 @@ class OrderController extends Controller
             'piezimes' => 'nullable|string',
         ]);
 
-        // Handle one-time client
-        if ($request->client_id === 'vienreizējs') {
-            $clientName = $request->klients;
-            $clientId = null; // or create new client in DB and get ID
-        } else {
-            $clientId = $request->client_id;
-            $clientName = null;
-        }
-
-        // Handle one-time product
-        if ($request->products_id === 'vienreizējs') {
-            $productName = $request->produkts;
-            $productId = null; // or create new product in DB and get ID
-        } else {
-            $productId = $request->products_id;
-            $productName = null;
-        }
-
-        // Create order
-        Order::create([
-            'client_id' => $clientId,
-            'klients' => $clientName,
-            'products_id' => $productId,
-            'produkts' => $productName,
+        $order = Order::create([
+            'client_id' => $request->client_id === 'vienreizējs' ? null : $request->client_id,
+            'klients' => $request->client_id === 'vienreizējs' ? $request->klients : null,
+            'products_id' => $request->products_id === 'vienreizējs' ? null : $request->products_id,
+            'produkts' => $request->products_id === 'vienreizējs' ? $request->produkts : null,
             'daudzums' => $validated['daudzums'],
             'izpildes_datums' => $validated['izpildes_datums'],
             'prioritāte' => $validated['prioritāte'],
@@ -132,12 +97,10 @@ class OrderController extends Controller
         return redirect()->route('orders.index')->with('success', 'Pasūtījums saglabāts veiksmīgi!');
     }
 
-
     public function show(Order $order)
     {
-         $order->load([
-            'client',
-            'product',
+        $order->load([
+            'client', 'product',
             'production.tasks.process',
             'production.tasks.user',
             'production.tasks.workLogs.user',
@@ -148,74 +111,55 @@ class OrderController extends Controller
 
     public function edit(Order $order)
     {
-        $clients = Client::all();
-        $products = Product::all();
-        return view('orders.edit', compact('order', 'clients', 'products'));
+        return view('orders.edit', [
+            'order' => $order,
+            'clients' => Client::all(),
+            'products' => Product::all()
+        ]);
     }
 
     public function update(Request $request, Order $order)
     {
-        $request->validate([
-            'client_id'       => 'nullable|exists:clients,id',
-            'klients'         => 'nullable|string|max:255',
-            'products_id'     => 'nullable|exists:products,id',
-            'produkts'        => 'nullable|string|max:255',
-            'daudzums'        => 'required|integer|min:1',
+        $validated = $request->validate([
+            'client_id' => 'nullable|exists:clients,id',
+            'klients' => 'nullable|string|max:255',
+            'products_id' => 'nullable|exists:products,id',
+            'produkts' => 'nullable|string|max:255',
+            'daudzums' => 'required|integer|min:1',
             'izpildes_datums' => 'nullable|date',
-            'prioritāte'      => 'nullable|string',
-            'statuss'         => 'nullable|string',
-            'piezimes'        => 'nullable|string',
+            'prioritāte' => 'nullable|string',
+            'statuss' => 'nullable|string',
+            'piezimes' => 'nullable|string',
         ]);
 
-        $order->client_id = $request->client_id ?: null;
-        $order->klients = $request->client_id ? null : $request->klients;
+        $order->update([
+            'client_id' => $request->client_id ?: null,
+            'klients' => $request->client_id ? null : $request->klients,
+            'products_id' => $request->products_id ?: null,
+            'produkts' => $request->products_id ? null : $request->produkts,
+            'daudzums' => $validated['daudzums'],
+            'izpildes_datums' => $request->izpildes_datums,
+            'prioritāte' => $request->prioritāte ?? 'normāla',
+            'statuss' => $request->statuss ?? 'nav nodots ražošanai',
+            'piezimes' => $request->piezimes,
+        ]);
 
-        $order->products_id = $request->products_id ?: null;
-        $order->produkts = $request->products_id ? null : $request->produkts;
-
-        $order->daudzums = $request->daudzums;
-        $order->izpildes_datums = $request->izpildes_datums;
-        $order->prioritāte = $request->prioritāte ?? 'normāla';
-        $order->statuss = $request->statuss ?? 'nav nodots ražošanai';
-        $order->piezimes = $request->piezimes;
-
-        $order->save();
-
-        // ✅ If order is completed, delete its production with all related data
+        // If completed, remove all related production data
         if ($order->statuss === 'pabeigts' && $order->production) {
-            $production = $order->production;
-
-            // Delete all task files first
-            foreach ($production->tasks as $task) {
+            foreach ($order->production->tasks as $task) {
                 foreach ($task->files as $file) {
-                    try {
-                        \Illuminate\Support\Facades\Storage::disk('public')->delete($file->path);
-                    } catch (\Throwable $e) {
-                        // ignore storage deletion errors
-                    }
+                    Storage::disk('public')->delete($file->path);
                     $file->delete();
                 }
-
-                // Detach assigned users (pivot table)
-                if (method_exists($task, 'assignedUsers')) {
-                    $task->assignedUsers()->detach();
-                }
-
-                // Delete the task itself
+                $task->assignedUsers()?->detach();
                 $task->delete();
             }
 
-            // Delete the production folder and record
-            try {
-                \Illuminate\Support\Facades\Storage::disk('public')->deleteDirectory("process_files/production_{$production->id}");
-            } catch (\Throwable $e) {
-                // ignore if directory missing
-            }
-
-            $production->delete();
+            Storage::disk('public')->deleteDirectory("process_files/production_{$order->production->id}");
+            $order->production->delete();
         }
 
-        return redirect()->route('orders.show', $order->id)->with('success', 'Pasūtījums atjaunināts veiksmīgi!');
+        return redirect()->route('orders.show', $order)->with('success', 'Pasūtījums atjaunināts veiksmīgi!');
     }
 
     public function destroy(Order $order)
@@ -231,17 +175,13 @@ class OrderController extends Controller
 
     public function fullImport(Request $request)
     {
-        $request->validate([
-            'file' => 'required|mimes:xlsx,csv'
-        ]);
-
+        $request->validate(['file' => 'required|mimes:xlsx,csv']);
         Excel::import(new OrdersFullImport, $request->file('file'));
-
         return redirect()->route('orders.index')->with('success', 'Import pabeigts veiksmīgi!');
     }
+
     public function print(Order $order)
     {
-        $order->load(['product', 'client']);
-        return view('orders.print', compact('order'));
+        return view('orders.print', ['order' => $order->load(['product', 'client'])]);
     }
 }
