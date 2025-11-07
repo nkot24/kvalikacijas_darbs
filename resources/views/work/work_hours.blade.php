@@ -11,7 +11,7 @@
     <div class="py-8 max-w-6xl mx-auto">
         <div class="bg-white shadow-md rounded-2xl p-6">
             <form method="GET" 
-                  class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 items-end"
+                  class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 items-end"
                   x-data="{ 
                       search: '{{ request('user_id') === 'all' ? 'Visi' : (optional($users->firstWhere('id', request('user_id')))->name ?? '') }}',
                       open: false 
@@ -74,15 +74,7 @@
                            class="border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 rounded-lg p-2 w-full">
                 </div>
 
-                {{-- Lunch minutes --}}
-                <div>
-                    <label class="block mb-1 text-sm font-medium text-gray-700">Pusdienas (min)</label>
-                    <input type="number" name="lunch_minutes" min="0"
-                           value="{{ old('lunch_minutes', $lunchMinutes) }}"
-                           class="border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 rounded-lg p-2 w-full">
-                </div>
-
-                {{-- Search button --}}
+                {{-- Search --}}
                 <div class="flex justify-center md:justify-start">
                     <x-primary-button class="w-full md:w-auto py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow">
                         Meklēt
@@ -93,7 +85,7 @@
             {{-- ✅ Work logs table --}}
             @if ($logs->count())
                 @if (request('user_id') === 'all')
-                    {{-- ✅ Show summary for all users --}}
+                    {{-- ✅ Summary for all users --}}
                     <div class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
                         <table class="min-w-full text-center">
                             <thead class="bg-gray-100 text-gray-800">
@@ -104,9 +96,7 @@
                             </thead>
                             <tbody>
                                 @foreach ($userTotals as $userId => $hours)
-                                    @php
-                                        $user = $users->firstWhere('id', $userId);
-                                    @endphp
+                                    @php $user = $users->firstWhere('id', $userId); @endphp
                                     <tr class="hover:bg-gray-50 transition-colors">
                                         <td class="px-4 py-2 border-b">{{ $user->name ?? 'Dzēsts lietotājs' }}</td>
                                         <td class="px-4 py-2 border-b text-indigo-700 font-semibold">
@@ -124,7 +114,7 @@
                         </table>
                     </div>
                 @else
-                    {{-- ✅ Regular table for single user --}}
+                    {{-- ✅ Single user table --}}
                     <div class="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
                         <table class="min-w-full text-center">
                             <thead class="bg-gray-100 text-gray-800">
@@ -132,13 +122,14 @@
                                     <th class="px-4 py-2 border-b">Datums</th>
                                     <th class="px-4 py-2 border-b">Sāka darbu</th>
                                     <th class="px-4 py-2 border-b">Beidza darbu</th>
+                                    <th class="px-4 py-2 border-b">Pusdienas (min)</th>
+                                    <th class="px-4 py-2 border-b">Paužu skaits</th>
                                     <th class="px-4 py-2 border-b">Kopā stundas (ar pusdienām)</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach ($logs as $log)
                                     @php
-                                        // Safely handle both Carbon and string date values
                                         $displayDate = $log->date instanceof \Carbon\Carbon
                                             ? $log->date->format('Y-m-d')
                                             : \Carbon\Carbon::parse($log->date)->format('Y-m-d');
@@ -151,20 +142,40 @@
                                     <tr class="hover:bg-gray-50 transition-colors">
                                         <td class="px-4 py-2 border-b">{{ $displayDate }}</td>
 
-                                        {{-- ✅ Editable start_time --}}
+                                        {{-- ✅ Editable start_time (time) --}}
                                         <td class="px-4 py-2 border-b cursor-pointer hover:bg-blue-50"
                                             data-editable="true"
+                                            data-type="time"
                                             data-id="{{ $log->id }}"
                                             data-column="start_time">
                                             {{ $log->start_time ?? '-' }}
                                         </td>
 
-                                        {{-- ✅ Editable end_time --}}
+                                        {{-- ✅ Editable end_time (time) --}}
                                         <td class="px-4 py-2 border-b cursor-pointer hover:bg-blue-50"
                                             data-editable="true"
+                                            data-type="time"
                                             data-id="{{ $log->id }}"
                                             data-column="end_time">
                                             {{ $log->end_time ?? '-' }}
+                                        </td>
+
+                                        {{-- ✅ Editable lunch_minutes (number) --}}
+                                        <td class="px-4 py-2 border-b cursor-pointer hover:bg-blue-50"
+                                            data-editable="true"
+                                            data-type="number"
+                                            data-id="{{ $log->id }}"
+                                            data-column="lunch_minutes">
+                                            {{ $log->lunch_minutes ?? 0 }}
+                                        </td>
+
+                                        {{-- ✅ Editable break_count (number) --}}
+                                        <td class="px-4 py-2 border-b cursor-pointer hover:bg-blue-50"
+                                            data-editable="true"
+                                            data-type="number"
+                                            data-id="{{ $log->id }}"
+                                            data-column="break_count">
+                                            {{ $log->break_count ?? 0 }}
                                         </td>
 
                                         <td class="px-4 py-2 border-b {{ $hoursClass }}">
@@ -174,7 +185,7 @@
                                 @endforeach
 
                                 <tr class="bg-indigo-50 font-semibold">
-                                    <td colspan="3" class="text-right px-4 py-2 border-t border-gray-300">Kopā:</td>
+                                    <td colspan="5" class="text-right px-4 py-2 border-t border-gray-300">Kopā:</td>
                                     <td class="px-4 py-2 border-t border-gray-300 text-indigo-700">
                                         {{ number_format($totalHours, 2) }}
                                     </td>
@@ -199,26 +210,32 @@
                 const originalValue = cell.textContent.trim().replace('-', '');
                 const logId = cell.dataset.id;
                 const column = cell.dataset.column;
+                const type = cell.dataset.type; // "time" | "number"
 
                 const input = document.createElement('input');
-                input.type = 'time';
-                input.step = 1; // force 24-hour format, allow seconds
-                input.value = (originalValue || '').slice(0, 8); // HH:MM:SS trimmed safely
-                input.className = 'border border-indigo-400 rounded px-1 py-0.5 text-center';
+                if (type === 'time') {
+                    input.type = 'time';
+                    input.step = 1; // seconds allowed
+                    input.value = (originalValue || '').slice(0, 8); // HH:MM:SS
+                } else {
+                    input.type = 'number';
+                    input.min = 0;
+                    input.step = 1;
+                    input.value = originalValue || '0';
+                }
+                input.className = 'border border-indigo-400 rounded px-1 py-0.5 text-center w-full';
                 cell.innerHTML = '';
                 cell.appendChild(input);
                 input.focus();
 
-                // ✅ Function to save
-                const saveTime = async () => {
+                const save = async () => {
                     const newValue = input.value;
-                    if (!newValue) {
+                    if (!newValue && type === 'time') {
                         cell.textContent = originalValue || '-';
                         return;
                     }
-
                     try {
-                        const res = await fetch(`/work-log/update-time/${logId}`, {
+                        const res = await fetch(`/work-log/update-field/${logId}`, {
                             method: 'PATCH',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -229,32 +246,34 @@
 
                         const data = await res.json();
                         if (data.success) {
-                            cell.textContent = newValue;
+                            cell.textContent = (type === 'time') ? newValue : parseInt(newValue, 10);
                             cell.classList.add('bg-green-100');
-                            setTimeout(() => cell.classList.remove('bg-green-100'), 1000);
+                            setTimeout(() => {
+                                cell.classList.remove('bg-green-100');
+                                // Reload to recalc adjusted hours and totals
+                                window.location.reload();
+                            }, 350);
                         } else {
-                            cell.textContent = originalValue || '-';
+                            cell.textContent = originalValue || (type === 'time' ? '-' : '0');
                             alert('Kļūda saglabājot!');
                         }
                     } catch (error) {
-                        cell.textContent = originalValue || '-';
-                        error.text().then(txt => alert('Servera kļūda: ' + txt));
+                        cell.textContent = originalValue || (type === 'time' ? '-' : '0');
+                        alert('Servera kļūda');
                     }
                 };
 
-                // ✅ Save on blur
-                input.addEventListener('blur', saveTime);
-
-                // ✅ Save on Enter
+                input.addEventListener('blur', save);
                 input.addEventListener('keydown', e => {
                     if (e.key === 'Enter') {
                         e.preventDefault();
-                        input.blur(); // triggers saveTime()
+                        input.blur();
+                    } else if (e.key === 'Escape') {
+                        cell.textContent = originalValue || (type === 'time' ? '-' : '0');
                     }
                 });
             });
         });
     });
     </script>
-
 </x-app-layout>

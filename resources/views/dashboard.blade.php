@@ -5,6 +5,9 @@
         </h2>
     </x-slot>
 
+    {{-- Alpine.js for the modal (safe to include; it’s deferred) --}}
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
     <!-- Original Dashboard Section -->
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -16,8 +19,9 @@
         </div>
     </div>
 
-    <!-- ✅ Added Work Start/End Section -->
-    <div class="py-8 max-w-xl mx-auto text-center">
+    <!-- ✅ Work Start/End Section with modal on 'Beigt darbu' -->
+    <div class="py-8 max-w-xl mx-auto text-center"
+         x-data="{ open:false, lunch:'{{ $log->lunch_minutes ?? '' }}', breaks:{{ $log->break_count ?? 0 }} }">
         <h3 class="text-lg font-semibold mb-4">Darba sākšana / beigšana</h3>
         <p class="mb-4 text-lg">Datums: {{ $today }}</p>
 
@@ -30,11 +34,60 @@
                 @csrf
                 <x-primary-button>Sākt darbu</x-primary-button>
             </form>
+
         @elseif ($log && !$log->end_time)
-            <form method="POST" action="{{ route('work.end') }}">
-                @csrf
-                <x-primary-button>Beigt darbu</x-primary-button>
-            </form>
+            {{-- Button opens modal instead of posting directly --}}
+            <button type="button"
+                    @click="open = true"
+                    class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow">
+                Beigt darbu
+            </button>
+
+            {{-- Modal --}}
+            <div x-show="open" x-transition class="fixed inset-0 z-50 flex items-center justify-center">
+                <div class="absolute inset-0 bg-black/40" @click="open=false" aria-hidden="true"></div>
+
+                <div class="relative bg-white rounded-2xl shadow-xl p-6 w-full max-w-md text-left">
+                    <h3 class="text-lg font-semibold mb-4">Pabeigt darbu</h3>
+
+                    <form method="POST" action="{{ route('work.end') }}">
+                        @csrf
+
+                        <div class="grid gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Pusdienas laiks (min)
+                                </label>
+                                <input type="number" name="lunch_minutes" x-model="lunch" min="0"
+                                       placeholder="0"
+                                       class="w-full border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 rounded-lg px-3 py-2">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Paužu skaits <span class="text-xs text-gray-500">(1 pauze = 10 min)</span>
+                                </label>
+                                <input type="number" name="break_count" x-model="breaks" min="0"
+                                       placeholder="0"
+                                       class="w-full border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 rounded-lg px-3 py-2">
+                            </div>
+                        </div>
+
+                        <div class="mt-6 flex gap-3 justify-end">
+                            <button type="button"
+                                    @click="open=false"
+                                    class="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50">
+                                Atcelt
+                            </button>
+                            <button type="submit"
+                                    class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">
+                                Apstiprināt
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
         @else
             <p class="text-gray-600 mt-4">Darbs šodien jau pabeigts.</p>
             <p class="mt-2">Nostrādāts no <strong>{{ $log->start_time }}</strong> līdz <strong>{{ $log->end_time }}</strong></p>

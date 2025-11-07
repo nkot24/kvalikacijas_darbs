@@ -89,6 +89,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/darbs/stundas', [WorkLogController::class, 'workHoursView'])->name('work.hours');
     Route::patch('/work-log/update-time/{id}', [WorkLogController::class, 'updateTime'])
     ->name('work.updateTime');
+    Route::patch('/work-log/update-field/{id}', [WorkLogController::class, 'updateField']);
 
 
     Route::prefix('inventory/materials')->name('inventory.materials.')->group(function () {

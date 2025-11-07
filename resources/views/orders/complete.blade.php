@@ -15,8 +15,9 @@
                 </div>
             @endif
 
-            <!-- Top Bar -->
+            <!-- Search + Back Button -->
             <div class="mb-6 px-[100px] flex flex-col lg:flex-row lg:items-center justify-between gap-4 flex-wrap">
+
                 <!-- Left: Search -->
                 <form method="GET" action="{{ route('orders.complete') }}" class="flex gap-2 items-center">
                     <input type="text" name="search" value="{{ request('search') }}"
@@ -55,39 +56,41 @@
                 <table class="table-auto w-full min-w-[1000px] border-collapse border border-gray-300 bg-white">
                     <thead>
                         <tr>
-                            <th class="border px-4 py-2">{!! sortLinkComplete('pasutijuma_numurs', 'Pasūtījuma numurs') !!}</th>
-                            <th class="border px-4 py-2">{!! sortLinkComplete('datums', 'Datums') !!}</th>
-                            <th class="border px-4 py-2">{!! sortLinkComplete('klients', 'Klients') !!}</th>
-                            <th class="border px-4 py-2">Produkts</th>
-                            <th class="border px-4 py-2">{!! sortLinkComplete('daudzums', 'Daudzums') !!}</th>
-                            <th class="border px-4 py-2">{!! sortLinkComplete('izpildes_datums', 'Izpildes datums') !!}</th>
-                            <th class="border px-4 py-2">{!! sortLinkComplete('prioritāte', 'Prioritāte') !!}</th>
-                            <th class="border px-4 py-2">{!! sortLinkComplete('statuss', 'Statuss') !!}</th>
-                            <th class="border px-4 py-2">Piezīmes</th>
-                            <th class="border px-4 py-2">Darbības</th>
+                            <th class="border px-3 py-1 max-w-[180px] truncate whitespace-nowrap text-sm">{!! sortLinkComplete('pasutijuma_numurs', 'Pasūtījuma numurs') !!}</th>
+                            <th class="border px-3 py-1 max-w-[180px] truncate whitespace-nowrap text-sm">{!! sortLinkComplete('datums', 'Datums') !!}</th>
+                            <th class="border px-3 py-1 max-w-[200px] truncate whitespace-nowrap text-sm">{!! sortLinkComplete('klients', 'Klients') !!}</th>
+                            <th class="border px-3 py-1 max-w-[200px] truncate whitespace-nowrap text-sm">Produkts</th>
+                            <th class="border px-3 py-1 max-w-[100px] truncate whitespace-nowrap text-sm">{!! sortLinkComplete('daudzums', 'Daudzums') !!}</th>
+                            <th class="border px-3 py-1 max-w-[180px] truncate whitespace-nowrap text-sm">{!! sortLinkComplete('izpildes_datums', 'Izpildes datums') !!}</th>
+                            <th class="border px-3 py-1 max-w-[120px] truncate whitespace-nowrap text-sm">{!! sortLinkComplete('prioritāte', 'Prioritāte') !!}</th>
+                            <th class="border px-3 py-1 max-w-[180px] truncate whitespace-nowrap text-sm">{!! sortLinkComplete('statuss', 'Statuss') !!}</th>
+                            <th class="border px-3 py-1 max-w-[250px] truncate whitespace-nowrap text-sm">Piezīmes</th>
+                           
                         </tr>
                     </thead>
+
                     <tbody>
                         @forelse ($orders as $order)
-                            <tr>
-                                <td class="border px-4 py-2">{{ $order->pasutijuma_numurs }}</td>
-                                <td class="border px-4 py-2">{{ $order->datums }}</td>
-                                <td class="border px-4 py-2">{{ $order->client->nosaukums ?? $order->klients }}</td>
-                                <td class="border px-4 py-2">{{ $order->product->nosaukums ?? $order->produkts }}</td>
-                                <td class="border px-4 py-2">{{ $order->daudzums }}</td>
-                                <td class="border px-4 py-2">{{ $order->izpildes_datums }}</td>
-                                <td class="border px-4 py-2">{{ $order->prioritāte }}</td>
-                                <td class="border px-4 py-2">{{ $order->statuss }}</td>
-                                <td class="border px-4 py-2">{{ $order->piezimes ?? '-' }}</td>
-                                <td class="border px-4 py-2 flex justify-center flex-wrap gap-3 text-2xl">
-                                    <a href="{{ route('orders.show', $order) }}" class="text-blue-600 hover:scale-110 transition-transform" title="Skatīt">👁️</a>
-                                    <a href="{{ route('orders.edit', $order) }}" class="text-blue-600 hover:scale-110 transition-transform" title="Rediģēt">✏️</a>
-                                    <a href="{{ route('orders.print', $order) }}" target="_blank" class="text-purple-600 hover:scale-110 transition-transform" title="Izprintēt">🖨️</a>
-                                </td>
+                            <tr
+                                onclick="window.location='{{ route('orders.show', $order->id) }}'"
+                                class="cursor-pointer transition-colors even:bg-yellow-50 odd:bg-white hover:bg-gray-100"
+                                title="Klikšķiniet, lai atvērtu pasūtījumu"
+                            >
+                                <td class="border px-3 py-1 max-w-[180px] truncate whitespace-nowrap text-sm">{{ $order->pasutijuma_numurs }}</td>
+                                <td class="border px-3 py-1 max-w-[180px] truncate whitespace-nowrap text-sm">{{ $order->datums }}</td>
+                                <td class="border px-3 py-1 max-w-[200px] truncate whitespace-nowrap text-sm">{{ $order->client->nosaukums ?? $order->klients }}</td>
+                                <td class="border px-3 py-1 max-w-[200px] truncate whitespace-nowrap text-sm">{{ $order->product->nosaukums ?? $order->produkts }}</td>
+                                <td class="border px-3 py-1 max-w-[100px] text-center text-sm">{{ $order->daudzums }}</td>
+                                <td class="border px-3 py-1 max-w-[180px] truncate whitespace-nowrap text-sm">{{ $order->izpildes_datums }}</td>
+                                <td class="border px-3 py-1 max-w-[120px] truncate whitespace-nowrap text-sm">{{ $order->prioritāte }}</td>
+                                <td class="border px-3 py-1 max-w-[180px] truncate whitespace-nowrap text-sm">{{ $order->statuss }}</td>
+                                <td class="border px-3 py-1 max-w-[250px] truncate whitespace-nowrap text-sm">{{ $order->piezimes ?? '-' }}</td>
+
+                                
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10" class="text-center py-4">Nav pabeigtu pasūtījumu.</td>
+                                <td colspan="10" class="text-center py-4 text-gray-600">Nav pabeigtu pasūtījumu.</td>
                             </tr>
                         @endforelse
                     </tbody>
