@@ -78,7 +78,7 @@
                     <label for="statuss" class="block text-sm font-medium text-gray-700">Statuss:</label>
                     <select name="statuss" id="statuss" class="mt-1 block w-full border-gray-300 rounded">
                         <option value="nav nodots ražošanai" {{ $order->statuss == 'nav nodots ražošanai' ? 'selected' : '' }}>Nav nodots ražošanai</option>
-                        <option value="ražošanā" {{ $order->statuss == 'ražošanā' ? 'selected' : '' }}>Ražošanā</option>
+                        <option value="nodots ražošanai" {{ $order->statuss == 'nodots ražošanai' ? 'selected' : '' }}>Nodots ražošanai</option>
                         <option value="pabeigts" {{ $order->statuss == 'pabeigts' ? 'selected' : '' }}>Pabeigts</option>
                     </select>
                 </div>
