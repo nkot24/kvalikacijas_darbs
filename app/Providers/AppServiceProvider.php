@@ -9,7 +9,7 @@ use App\Policies\TaskPolicy;
 use App\Observers\TaskObserver;
 
 
-class AuthServiceProvider extends ServiceProvider
+class AppServiceProvider extends ServiceProvider
 {
     /**
      * The policy mappings for the application.

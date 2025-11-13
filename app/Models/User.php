@@ -44,6 +44,8 @@ class User extends Authenticatable
         ];
     }
 
+
+
     /**
      * Check if the user is an admin.
      *

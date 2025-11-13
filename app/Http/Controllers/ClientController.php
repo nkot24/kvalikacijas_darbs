@@ -118,8 +118,7 @@ class ClientController extends Controller
     // ✅ Export full Excel (3 sheets: clients, contact persons, delivery addresses)
     public function fullExport()
     {
-        $timestamp = now()->format('Y_m_d_H_i_s');
-        return Excel::download(new ClientsFullExport, "clients_full_export_{$timestamp}.xlsx");
+        return Excel::download(new ClientsFullExport, 'clients.xlsx');
     }
 
     // ✅ Import full Excel (3 sheets into appropriate tables)
