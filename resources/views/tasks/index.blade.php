@@ -11,6 +11,7 @@
             @forelse ($currentTasks as $task)
                 <div class="border p-4 rounded mb-4">
                     <h4 class="font-bold">
+                        <p><strong>Klients:</strong> {{ $task->production->order->klients ?? $task->production->order->client->nosaukums }}</p>
                         {{ optional($task->production->order->product)->nosaukums ?? $task->production->order->produkts }}
                     </h4>
 
@@ -119,6 +120,7 @@
             @forelse ($futureTasks as $task)
                 <div class="border p-4 rounded mb-4">
                     <h4 class="font-bold">
+                        <p><strong>Klients:</strong> {{ $task->production->order->klients ?? $task->production->order->client->nosaukums }}</p>
                         {{ optional($task->production->order->product)->nosaukums ?? $task->production->order->produkts }}
                     </h4>
 
