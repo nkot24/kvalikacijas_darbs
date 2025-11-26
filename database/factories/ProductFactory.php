@@ -24,4 +24,5 @@ class ProductFactory extends Factory
             'augstums' => $this->faker->randomFloat(2, 1, 200),
         ];
     }
+    
 }

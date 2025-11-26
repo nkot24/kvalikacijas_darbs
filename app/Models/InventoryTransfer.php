@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class InventoryTransfer extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'product_id','qty','from_location','to_location','created_by','accounted','accounted_at'
     ];
