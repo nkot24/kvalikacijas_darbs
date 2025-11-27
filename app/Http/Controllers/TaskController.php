@@ -6,9 +6,8 @@ use App\Models\Task;
 use App\Models\Production;
 use App\Models\Order;
 use App\Models\TaskWorkLog;
-use App\Models\ProcessProgress; // <-- ADDED
+use App\Models\ProcessProgress;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class TaskController extends Controller
 {
@@ -16,193 +15,143 @@ class TaskController extends Controller
     {
         $user = auth()->user();
 
-        // 1️⃣ Personal tasks
-        $personalTasks = Task::with(['process', 'production.order'])
+        $personal = Task::with(['process', 'production.order'])
             ->where('user_id', $user->id)
-            ->where('status', '!=', 'pabeigts')
-            ->get();
+            ->where('status', '!=', 'pabeigts');
 
-        // 2️⃣ Shared tasks
-        $sharedTasks = Task::with(['assignedUsers', 'process', 'production.order'])
+        $shared = Task::with(['process', 'production.order'])
             ->whereNull('user_id')
             ->where('status', '!=', 'pabeigts')
-            ->whereHas('assignedUsers', function ($q) use ($user) {
-                $q->where('users.id', $user->id);
-            })
-            ->get();
+            ->whereHas('assignedUsers', fn($q) => $q->where('users.id', $user->id));
 
-        // 3️⃣ Merge
-        $allTasks = $personalTasks->concat($sharedTasks);
+        $tasks = $personal->union($shared)->get();
 
-        $currentTasks = collect();
-        $futureTasks  = collect();
+        $current = collect();
+        $future  = collect();
 
-        // 4️⃣ Group and find "unlocked" process
-        $tasksByProduction = $allTasks->groupBy('production_id');
+        foreach ($tasks->groupBy('production_id') as $group) {
+            $productionTasks = Task::where('production_id', $group->first()->production_id)->get();
 
-        foreach ($tasksByProduction as $groupedTasks) {
-            $productionId          = $groupedTasks->first()->production_id;
-            $allTasksForProduction = Task::where('production_id', $productionId)->get();
+            $unlocked = $productionTasks
+                ->groupBy('process_id')
+                ->sortKeys()
+                ->first(fn($set) => !$set->every(fn($t) => $t->status === 'pabeigts'))
+                ?->first()
+                ?->process_id;
 
-            $processIds        = $allTasksForProduction->pluck('process_id')->unique()->sort()->values();
-            $unlockedProcessId = null;
-
-            foreach ($processIds as $processId) {
-                $tasksInThisProcess = $allTasksForProduction->where('process_id', $processId);
-                $allDone = $tasksInThisProcess->every(fn($t) => $t->status === 'pabeigts');
-                if (!$allDone) {
-                    $unlockedProcessId = $processId;
-                    break;
-                }
-            }
-
-            foreach ($groupedTasks as $task) {
-                if ((int)$task->process_id === (int)$unlockedProcessId) {
-                    $currentTasks->push($task);
-                } elseif ($task->status !== 'pabeigts' && (int)$task->process_id !== (int)$unlockedProcessId) {
-                    $futureTasks->push($task);
+            foreach ($group as $task) {
+                if ($task->process_id == $unlocked) {
+                    $current->push($task);
+                } else {
+                    $future->push($task);
                 }
             }
         }
 
-        // 5️⃣ Define priority order (matches your form)
-        $priorityOrder = ['augsta' => 1, 'normāla' => 2, 'zema' => 3];
+        $priority = ['augsta' => 1, 'normāla' => 2, 'zema' => 3];
 
-        // 6️⃣ Sort collections
-        $sortFn = function ($a, $b) use ($priorityOrder) {
-            $aPriority = $priorityOrder[strtolower($a->production->order->prioritāte ?? 'zema')] ?? 4;
-            $bPriority = $priorityOrder[strtolower($b->production->order->prioritāte ?? 'zema')] ?? 4;
+        $sort = function ($a, $b) use ($priority) {
+            $pa = $priority[strtolower($a->production->order->prioritāte ?? 'zema')] ?? 3;
+            $pb = $priority[strtolower($b->production->order->prioritāte ?? 'zema')] ?? 3;
 
-            if ($aPriority !== $bPriority) {
-                // smaller number = higher priority
-                return $aPriority <=> $bPriority;
-            }
-
-            // If same priority → earlier date first
-            $aDate = strtotime($a->production->order->izpildes_datums ?? '2100-01-01');
-            $bDate = strtotime($b->production->order->izpildes_datums ?? '2100-01-01');
-
-            return $aDate <=> $bDate;
+            return $pa === $pb
+                ? strtotime($a->production->order->izpildes_datums ?? '2100-01-01')
+                    <=> strtotime($b->production->order->izpildes_datums ?? '2100-01-01')
+                : $pa <=> $pb;
         };
 
-        $currentTasks = $currentTasks->sort($sortFn)->values();
-        $futureTasks  = $futureTasks->sort($sortFn)->values();
-
         return view('tasks.index', [
-            'currentTasks' => $currentTasks,
-            'futureTasks'  => $futureTasks,
+            'currentTasks' => $current->sort($sort)->values(),
+            'futureTasks'  => $future->sort($sort)->values(),
         ]);
     }
 
-
-
     public function show(Task $task)
     {
-        $user = auth()->user();
-
-        // Same authorization logic as your ZIP
-        if (
-            ($task->user_id !== null && $task->user_id !== $user->id) ||
-            ($task->user_id === null && (!$task->process || !$task->process->users->contains($user)))
-        ) {
-            abort(403, 'Unauthorized action.');
-        }
-
+        $this->authorizeTask($task);
         return view('tasks.show', compact('task'));
     }
 
     public function update(Request $request, Task $task)
     {
-        $user = auth()->user();
-
-        // Same authorization logic as your ZIP
-        if (
-            ($task->user_id !== null && $task->user_id !== $user->id) ||
-            ($task->user_id === null && (!$task->process || !$task->process->users->contains($user)))
-        ) {
-            abort(403, 'Unauthorized');
-        }
+        $this->authorizeTask($task);
 
         $validated = $request->validate([
             'status'      => 'required|string|in:nav uzsākts,daļēji pabeigts,pabeigts',
             'done_amount' => 'nullable|integer|min:0',
+            'spent_time'  => 'nullable|numeric|min:0.01',
+            'comment'     => 'nullable|string|max:2000',
         ]);
 
-        // IMPORTANT: Do NOT "claim" shared tasks anymore.
-        // (Removed the block that set $task->user_id = $user->id when null.)
+        $orderQty = (int) data_get($task, 'production.order.daudzums', 0);
+        $oldDone  = (int) $task->done_amount;
+        $newDone  = $oldDone;
+        $status   = $validated['status'];
 
-        // Compute new total & possible promotion to "pabeigts"
-        $orderQty    = (int) data_get($task, 'production.order.daudzums', 0);
-        $oldDone     = (int) ($task->done_amount ?? 0);
-        $newDone     = $oldDone;
-        $finalStatus = $validated['status'];
-
-        if ($validated['status'] === 'pabeigts') {
-            if ($orderQty > 0) {
+        if ($status === 'pabeigts') {
+            $newDone = $orderQty ?: $oldDone;
+        } elseif ($status === 'daļēji pabeigts') {
+            $delta = max(0, (int)$validated['done_amount']);
+            if ($delta === 0) {
+                return back()->withErrors(['done_amount' => 'Lūdzu norādi paveikto daudzumu.']);
+            }
+            $newDone = $orderQty ? min($orderQty, $oldDone + $delta) : $oldDone + $delta;
+            if ($orderQty && $newDone >= $orderQty) {
                 $newDone = $orderQty;
+                $status  = 'pabeigts';
             }
-        } elseif ($validated['status'] === 'daļēji pabeigts') {
-            $inputDone = (int) ($validated['done_amount'] ?? 0);
-            if ($inputDone <= 0) {
-                return back()->withErrors(['done_amount' => 'Lūdzu norādi, cik daudz izdarīji šajā atjauninājumā.']);
-            }
-            $newDone = $orderQty > 0 ? min($orderQty, $oldDone + $inputDone) : ($oldDone + $inputDone);
-
-            if ($orderQty > 0 && $newDone >= $orderQty) {
-                $newDone     = $orderQty;
-                $finalStatus = 'pabeigts';
-            }
-        } else { // 'nav uzsākts'
+        } else {
             $newDone = 0;
         }
 
-        // Persist (status may have been promoted)
-        $task->status      = $finalStatus;
-        $task->done_amount = $newDone;
-        $task->save();
+        $task->update([
+            'status'      => $status,
+            'done_amount' => $newDone,
+        ]);
 
-        // Per-user work log (delta), but task stays shared (user_id remains null)
         $delta = max(0, $newDone - $oldDone);
         if ($delta > 0) {
             TaskWorkLog::create([
                 'task_id' => $task->id,
-                'user_id' => $user->id,
+                'user_id' => auth()->id(),
                 'amount'  => $delta,
             ]);
         }
 
-        /* ====================== ADDED BLOCK ====================== */
-        // If user marks the task as partially or fully done, require time and log progress
-        if (in_array($finalStatus, ['daļēji pabeigts', 'pabeigts'], true)) {
-            $request->validate([
-                'spent_time' => 'required|numeric|min:0.01',
-                'comment'    => 'nullable|string|max:2000',
-            ], [
-                'spent_time.required' => 'Lūdzu ievadiet pavadīto laiku (stundās).',
-            ]);
+        if (in_array($status, ['daļēji pabeigts', 'pabeigts'], true)) {
+            $request->validate(['spent_time' => 'required']);
 
             ProcessProgress::create([
                 'task_id'    => $task->id,
                 'process_id' => $task->process_id,
-                'user_id'    => $user->id,
-                'status'     => $finalStatus,
-                'spent_time' => (float) $request->input('spent_time'), // store as hours
-                'comment'    => $request->input('comment'),
+                'user_id'    => auth()->id(),
+                'status'     => $status,
+                'spent_time' => $validated['spent_time'],
+                'comment'    => $validated['comment'],
             ]);
         }
-        /* ==================== / END ADDED BLOCK ====================== */
 
-        // Finish production when no tasks remain
         $production = Production::with('tasks')->find($task->production_id);
-        if ($production) {
-            if ($production->tasks()->count() === 0) {
-                if ($order = Order::find($production->order_id)) {
-                    $order->update(['statuss' => 'pabeigts']);
-                }
-                $production->delete();
-            }
+
+        if ($production && $production->tasks()->count() === 0) {
+            Order::where('id', $production->order_id)->update(['statuss' => 'pabeigts']);
+            $production->delete();
         }
 
-        return redirect()->route('tasks.index')->with('success', 'Uzdevums atjaunināts veiksmīgi.');
+        return redirect()->route('tasks.index')->with('success', 'Uzdevums atjaunināts.');
+    }
+
+    private function authorizeTask(Task $task)
+    {
+        $u = auth()->user();
+
+        $isPersonal = $task->user_id === $u->id;
+        $isShared   = $task->user_id === null
+            && $task->process
+            && $task->process->users->contains($u);
+
+        if (!$isPersonal && !$isShared) {
+            abort(403, 'Unauthorized');
+        }
     }
 }
