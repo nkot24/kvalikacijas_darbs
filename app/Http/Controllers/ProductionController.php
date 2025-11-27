@@ -25,129 +25,34 @@ class ProductionController extends Controller
 
     public function create()
     {
-        $orders    = Order::where('statuss', 'nav nodots ražošanai')->get();
-        $processes = Process::with('users')->get();
-        $users     = User::all();
-
-        return view('productions.create', compact('orders', 'processes', 'users'));
+        return view('productions.create', [
+            'orders'    => Order::where('statuss', 'nav nodots ražošanai')->get(),
+            'processes' => Process::with('users')->get(),
+            'users'     => User::all(),
+        ]);
     }
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'order_id'          => ['required', 'integer', 'exists:orders,id'],
-            'process_ids'       => ['required', 'array', 'min:1'],
-            'process_ids.*'     => ['integer', 'exists:processes,id'],
-
-            'users'             => ['nullable', 'array'],
-            'users.*'           => ['nullable', 'array'],
-            'users.*.*'         => ['nullable', 'integer', 'exists:users,id'],
-
-            'process_files'     => ['nullable', 'array'],
-            'process_files.*'   => ['nullable', 'array'],
-            'process_files.*.*' => ['nullable', 'file', 'max:102400'], // 100MB
-
-            'global_files'      => ['nullable', 'array'],
-            'global_files.*'    => ['nullable', 'file', 'max:102400'], // 100MB
-        ], [
-            'process_ids.required'  => 'Izvēlieties vismaz vienu procesu.',
-            'process_files.*.*.max' => 'Fails ir pārāk liels (maks. 100MB).',
-            'global_files.*.max'    => 'Fails ir pārāk liels (maks. 100MB).',
-        ]);
+        $validated = $this->validateProduction($request);
 
         DB::beginTransaction();
 
         try {
-            // 1️⃣ Create production
-            $production = Production::create([
-                'order_id' => (int) $validated['order_id'],
-            ]);
+            // Create production
+            $production = Production::create(['order_id' => $validated['order_id']]);
 
-            // 2️⃣ Create one shared task per selected process
-            foreach ($validated['process_ids'] as $processId) {
-                $task = Task::create([
-                    'production_id' => $production->id,
-                    'process_id'    => (int) $processId,
-                    'user_id'       => null, // shared
-                    'status'        => 'nav uzsākts',
-                    'done_amount'   => 0,
-                ]);
+            // Create tasks
+            $tasks = $this->createTasks($production, $validated['process_ids'], $request);
 
-                // Attach selected users to the shared task
-                $selectedUserIds = $request->input("users.$processId");
-                if (is_array($selectedUserIds) && count($selectedUserIds) > 0) {
-                    $task->assignedUsers()->sync($selectedUserIds);
-                }
-            }
+            // Process-specific files
+            $this->handleProcessFiles($production, $tasks, $request);
 
-            // 3️⃣ Save uploaded files (per-process)
-            foreach ($validated['process_ids'] as $processId) {
-                $processId = (int) $processId;
+            // Global files
+            $this->handleGlobalFiles($production, $tasks, $request);
 
-                if ($request->hasFile("process_files.$processId")) {
-                    $tasksForProcess = $production->tasks()
-                        ->where('process_id', $processId)
-                        ->get();
-
-                    foreach ((array) $request->file("process_files.$processId") as $file) {
-                        if (!$file) continue;
-
-                        $storedPath = $file->store(
-                            "process_files/production_{$production->id}/process_{$processId}",
-                            'public'
-                        );
-
-                        foreach ($tasksForProcess as $task) {
-                            ProcessFile::create([
-                                'process_id'    => $processId,
-                                'task_id'       => (int) $task->id,
-                                'uploaded_by'   => auth()->id(),
-                                'original_name' => $file->getClientOriginalName(),
-                                'path'          => $storedPath,
-                                'mime'          => $file->getClientMimeType(),
-                                'size'          => $file->getSize(),
-                            ]);
-                        }
-                    }
-                }
-            }
-
-            // 4️⃣ Global files → attach to all tasks
-            if ($request->hasFile('global_files')) {
-                $allTasksForSelectedProcesses = $production->tasks()
-                    ->whereIn('process_id', $validated['process_ids'])
-                    ->get()
-                    ->groupBy('process_id');
-
-                foreach ((array) $request->file('global_files') as $file) {
-                    if (!$file) continue;
-
-                    $storedPath = $file->store(
-                        "process_files/production_{$production->id}/global",
-                        'public'
-                    );
-
-                    foreach ($allTasksForSelectedProcesses as $processId => $tasks) {
-                        foreach ($tasks as $task) {
-                            ProcessFile::create([
-                                'process_id'    => (int) $processId,
-                                'task_id'       => (int) $task->id,
-                                'uploaded_by'   => auth()->id(),
-                                'original_name' => $file->getClientOriginalName(),
-                                'path'          => $storedPath,
-                                'mime'          => $file->getClientMimeType(),
-                                'size'          => $file->getSize(),
-                            ]);
-                        }
-                    }
-                }
-            }
-
-            // 5️⃣ Update order status
-            $order = Order::find((int) $validated['order_id']);
-            if ($order) {
-                $order->update(['statuss' => 'nodots ražošanai']);
-            }
+            // Update order status
+            Order::where('id', $validated['order_id'])->update(['statuss' => 'nodots ražošanai']);
 
             DB::commit();
 
@@ -157,206 +62,47 @@ class ProductionController extends Controller
         } catch (\Throwable $e) {
             DB::rollBack();
 
-            return back()
-                ->withErrors(['general' => 'Neizdevās izveidot ražošanu.'])
-                ->withInput();
+            return back()->withErrors(['general' => 'Neizdevās izveidot ražošanu.'])->withInput();
         }
     }
 
 
-    public function show(Production $production)
+    public function edit(Production $production)
     {
-        $production->load([
-            'order',
-            'tasks.process',
-            'tasks.user',
-            'tasks.workLogs.user',
-            'tasks.files',
-        ]);
-
-        $allTasks = $production->tasks->sortBy('process_id');
-
-        return view('productions.show', compact('production', 'allTasks'));
-    }
-
-    /**
-     * EDIT production
-     */
-   public function edit(Production $production)
-    {
-        $orders = Order::where('statuss', 'nav nodots ražošanai')
-            ->orWhere('id', $production->order_id) // allow current order to remain selectable
-            ->get();
-
-        $processes = Process::with('users')->get();
-
-        // Eager-load tasks + files (+ process) so the view can show existing files
-        $production->load([
-            'order',
-            'tasks.files',
-            'tasks.process',
-            // 'tasks.user', // only if you need it in the edit view
-        ]);
-
-        // Preselect processes used in this production
-        $selectedProcessIds = $production->tasks()
-            ->pluck('process_id')->unique()->toArray();
-
-        $selectedUsersByProcess = [];
-
-        foreach ($production->tasks as $task) {
-            $processId = $task->process_id;
-            $userIds = $task->assignedUsers()->pluck('users.id')->toArray();
-
-            if (!isset($selectedUsersByProcess[$processId])) {
-                $selectedUsersByProcess[$processId] = [];
-            }
-
-            $selectedUsersByProcess[$processId] = array_unique(
-                array_merge($selectedUsersByProcess[$processId], $userIds)
-            );
-        }
+        $production->load(['tasks.files', 'tasks.process', 'tasks.assignedUsers']);
 
         return view('productions.edit', [
             'production'             => $production,
-            'orders'                 => $orders,
-            'processes'              => $processes,
-            'selectedProcessIds'     => $selectedProcessIds,
-            'selectedUsersByProcess' => $selectedUsersByProcess,
+            'orders'                 => Order::where('statuss', 'nav nodots ražošanai')
+                                             ->orWhere('id', $production->order_id)
+                                             ->get(),
+            'processes'              => Process::with('users')->get(),
+            'selectedProcessIds'     => $production->tasks->pluck('process_id')->toArray(),
+            'selectedUsersByProcess' => $production->tasks
+                ->mapWithKeys(fn($t) => [$t->process_id => $t->assignedUsers->pluck('id')->toArray()])
+                ->toArray(),
         ]);
     }
 
-    /**
-     * UPDATE production
-     */
+
     public function update(Request $request, Production $production)
     {
-        $validated = $request->validate([
-            'order_id'          => ['required', 'integer', 'exists:orders,id'],
-            'process_ids'       => ['required', 'array', 'min:1'],
-            'process_ids.*'     => ['integer', 'exists:processes,id'],
-
-            'users'             => ['nullable', 'array'],
-            'users.*'           => ['nullable', 'array'],
-            'users.*.*'         => ['nullable', 'integer', 'exists:users,id'],
-
-            'process_files'     => ['nullable', 'array'],
-            'process_files.*'   => ['nullable', 'array'],
-            'process_files.*.*' => ['nullable', 'file', 'max:102400'], // 100MB
-
-            'global_files'      => ['nullable', 'array'],
-            'global_files.*'    => ['nullable', 'file', 'max:102400'], // 100 MB
-        ], [
-            'process_ids.required'  => 'Izvēlieties vismaz vienu procesu.',
-            'process_files.*.*.max' => 'Fails ir pārāk liels (maks. 100MB).',
-            'global_files.*.max'    => 'Fails ir pārāk liels (maks. 100MB).',
-        ]);
+        $validated = $this->validateProduction($request);
 
         DB::beginTransaction();
 
         try {
-            // 1️⃣ Update production
-            $production->update([
-                'order_id' => (int) $validated['order_id'],
-            ]);
+            // Update production
+            $production->update(['order_id' => $validated['order_id']]);
 
-            // 2️⃣ Remove old tasks/files for processes that were unchecked
-            $currentProcessIds = $production->tasks()->pluck('process_id')->unique();
-            $selectedProcessIds = collect($validated['process_ids'])->map(fn($id) => (int)$id);
+            // ✔ Fix: Update tasks WITHOUT deleting progress
+            $tasks = $this->updateTasks($production, $validated['process_ids'], $request);
 
-            $toRemove = $currentProcessIds->diff($selectedProcessIds);
-            if ($toRemove->isNotEmpty()) {
-                $tasksToRemove = $production->tasks()->whereIn('process_id', $toRemove)->get();
-                foreach ($tasksToRemove as $task) {
-                    foreach ($task->files as $file) {
-                        try {
-                            Storage::disk('public')->delete($file->path);
-                        } catch (\Throwable $e) { /* ignore */ }
-                        $file->delete();
-                    }
-                    $task->delete();
-                }
-            }
+            // Process files
+            $this->handleProcessFiles($production, $tasks, $request);
 
-            // 3️⃣ Create shared task per selected process
-            foreach ($selectedProcessIds as $processId) {
-                // Delete existing tasks and their files for this process
-                $existingTasks = $production->tasks()->where('process_id', $processId)->get();
-                foreach ($existingTasks as $task) {
-                    foreach ($task->files as $file) {
-                        try {
-                            Storage::disk('public')->delete($file->path);
-                        } catch (\Throwable $e) {}
-                        $file->delete();
-                    }
-                    $task->delete();
-                }
-
-                // Create new shared task
-                $task = Task::create([
-                    'production_id' => $production->id,
-                    'process_id'    => $processId,
-                    'user_id'       => null,
-                    'status'        => 'nav uzsākts',
-                    'done_amount'   => 0,
-                ]);
-
-                // Attach users (if any)
-                $selectedUserIds = $request->input("users.$processId");
-                if (is_array($selectedUserIds) && count($selectedUserIds) > 0) {
-                    $task->assignedUsers()->sync($selectedUserIds);
-                }
-
-                // 4️⃣ Process-specific files
-                if ($request->hasFile("process_files.$processId")) {
-                    foreach ((array) $request->file("process_files.$processId") as $file) {
-                        if (!$file) continue;
-
-                        $storedPath = $file->store(
-                            "process_files/production_{$production->id}/process_{$processId}",
-                            'public'
-                        );
-
-                        ProcessFile::create([
-                            'process_id'    => $processId,
-                            'task_id'       => $task->id,
-                            'uploaded_by'   => optional($request->user())->id,
-                            'original_name' => $file->getClientOriginalName(),
-                            'path'          => $storedPath,
-                            'mime'          => $file->getClientMimeType(),
-                            'size'          => $file->getSize(),
-                        ]);
-                    }
-                }
-            }
-
-            // 5️⃣ Global files → attach to all current tasks
-            if ($request->hasFile('global_files')) {
-                $allTasks = $production->tasks()->get()->groupBy('process_id');
-
-                foreach ((array) $request->file('global_files') as $file) {
-                    if (!$file) continue;
-
-                    $storedPath = $file->store(
-                        "process_files/production_{$production->id}/global",
-                        'public'
-                    );
-
-                    foreach ($allTasks as $processId => $tasks) {
-                        foreach ($tasks as $task) {
-                            ProcessFile::create([
-                                'process_id'    => (int) $processId,
-                                'task_id'       => (int) $task->id,
-                                'uploaded_by'   => optional($request->user())->id,
-                                'original_name' => $file->getClientOriginalName(),
-                                'path'          => $storedPath,
-                                'mime'          => $file->getClientMimeType(),
-                                'size'          => $file->getSize(),
-                            ]);
-                        }
-                    }
-                }
-            }
+            // Global files
+            $this->handleGlobalFiles($production, $tasks, $request);
 
             DB::commit();
 
@@ -365,22 +111,175 @@ class ProductionController extends Controller
                 ->with('success', 'Ražošana atjaunināta.');
         } catch (\Throwable $e) {
             DB::rollBack();
-            return back()
-                ->withErrors(['general' => 'Neizdevās atjaunināt ražošanu.'])
-                ->withInput();
+            return back()->withErrors(['general' => 'Neizdevās atjaunināt ražošanu.'])->withInput();
         }
     }
 
+
     public function destroy(Production $production)
     {
-        // Optional: delete stored files for this production
         try {
             Storage::disk('public')->deleteDirectory("process_files/production_{$production->id}");
-        } catch (\Throwable $e) {
-            // ignore storage errors
-        }
+        } catch (\Throwable $e) {}
 
         $production->delete();
+
         return redirect()->route('productions.index')->with('success', 'Ražošana dzēsta.');
+    }
+
+    //  ───────────────────────────────────────────────────────────────
+    //  HELPERS
+    //  ───────────────────────────────────────────────────────────────
+
+    private function validateProduction(Request $request)
+    {
+        return $request->validate([
+            'order_id'      => ['required', 'exists:orders,id'],
+            'process_ids'   => ['required', 'array', 'min:1'],
+            'process_ids.*' => ['integer', 'exists:processes,id'],
+
+            'users'         => ['nullable', 'array'],
+            'users.*'       => ['nullable', 'array'],
+            'users.*.*'     => ['nullable', 'integer', 'exists:users,id'],
+
+            'process_files'     => ['nullable', 'array'],
+            'process_files.*'   => ['nullable', 'array'],
+            'process_files.*.*' => ['nullable', 'file', 'max:102400'],
+
+            'global_files'      => ['nullable', 'array'],
+            'global_files.*'    => ['nullable', 'file', 'max:102400'],
+        ]);
+    }
+
+    /**
+     * CREATE TASKS for production
+     */
+    private function createTasks(Production $production, array $processIds, Request $request)
+    {
+        $tasks = [];
+
+        foreach ($processIds as $processId) {
+            $task = Task::create([
+                'production_id' => $production->id,
+                'process_id'    => $processId,
+                'status'        => 'nav uzsākts',
+                'done_amount'   => 0,
+            ]);
+
+            // Assign users
+            $task->assignedUsers()->sync($request->input("users.$processId", []));
+
+            $tasks[$processId] = $task;
+        }
+
+        return $tasks;
+    }
+
+
+    /**
+     * UPDATE TASKS — keep progress!
+     */
+    private function updateTasks(Production $production, array $newProcessIds, Request $request)
+    {
+        $existingTasks = $production->tasks->keyBy('process_id');
+
+        $currentProcessIds = $existingTasks->keys()->toArray();
+
+        $processesToAdd    = array_diff($newProcessIds, $currentProcessIds);
+        $processesToRemove = array_diff($currentProcessIds, $newProcessIds);
+
+        // 1️⃣ Remove tasks for processes no longer selected
+        foreach ($processesToRemove as $processId) {
+            $task = $existingTasks[$processId];
+
+            foreach ($task->files as $file) {
+                Storage::disk('public')->delete($file->path);
+                $file->delete();
+            }
+
+            $task->delete();
+        }
+
+        $updated = [];
+
+        // 2️⃣ Add tasks for new processes
+        foreach ($processesToAdd as $processId) {
+            $newTask = Task::create([
+                'production_id' => $production->id,
+                'process_id'    => $processId,
+                'status'        => 'nav uzsākts',
+                'done_amount'   => 0,
+            ]);
+
+            $newTask->assignedUsers()->sync($request->input("users.$processId", []));
+
+            $updated[$processId] = $newTask;
+        }
+
+        // 3️⃣ Keep and update existing tasks (KEEP PROGRESS)
+        foreach ($existingTasks as $processId => $task) {
+            if (in_array($processId, $newProcessIds)) {
+                // Update assigned users only
+                $task->assignedUsers()->sync($request->input("users.$processId", []));
+                $updated[$processId] = $task;
+            }
+        }
+
+        return $updated;
+    }
+
+
+
+
+    /**
+     * PROCESS-SPECIFIC FILES
+     */
+    private function handleProcessFiles(Production $production, array $tasks, Request $request)
+    {
+        foreach ($tasks as $processId => $task) {
+            $files = $request->file("process_files.$processId", []);
+
+            foreach ($files as $file) {
+                $path = $file->store("process_files/production_{$production->id}/process_{$processId}", 'public');
+
+                ProcessFile::create([
+                    'process_id'    => $processId,
+                    'task_id'       => $task->id,
+                    'uploaded_by'   => auth()->id(),
+                    'original_name' => $file->getClientOriginalName(),
+                    'path'          => $path,
+                    'mime'          => $file->getClientMimeType(),
+                    'size'          => $file->getSize(),
+                ]);
+            }
+        }
+    }
+
+
+    /**
+     * GLOBAL FILES → attach to all tasks
+     */
+    private function handleGlobalFiles(Production $production, array $tasks, Request $request)
+    {
+        $files = $request->file('global_files', []);
+
+        foreach ($files as $file) {
+            $storedPath = $file->store(
+                "process_files/production_{$production->id}/global",
+                'public'
+            );
+
+            foreach ($tasks as $processId => $task) {
+                ProcessFile::create([
+                    'process_id'    => $processId,
+                    'task_id'       => $task->id,
+                    'uploaded_by'   => auth()->id(),
+                    'original_name' => $file->getClientOriginalName(),
+                    'path'          => $storedPath,
+                    'mime'          => $file->getClientMimeType(),
+                    'size'          => $file->getSize(),
+                ]);
+            }
+        }
     }
 }
