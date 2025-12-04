@@ -20,6 +20,8 @@ use App\Models\WorkLog;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Carbon\Carbon;
+
 
 
     Route::get('/', function () {
@@ -28,12 +30,29 @@ use Illuminate\Support\Facades\Schema;
 
     // ✅ Fixed Dashboard route with $today and $log variables
     Route::get('/dashboard', function () {
-        $today = now()->toDateString();
-        $log = WorkLog::where('user_id', Auth::id())
-                    ->whereDate('created_at', $today)
-                    ->first();
+        $user = Auth::user();
+        $now  = Carbon::now('Europe/Riga');
+        $today = $now->toDateString();
 
-        return view('dashboard', compact('today', 'log'));
+        // Today's log
+        $log = WorkLog::where('user_id', $user->id)
+            ->whereDate('date', $today)
+            ->first();
+
+        // This month's logs for this user
+        $monthLogs = WorkLog::where('user_id', $user->id)
+            ->whereYear('date', $now->year)
+            ->whereMonth('date', $now->month)
+            ->get(['hours_worked']);
+
+        // Sum absolute hours_worked (removes minus sign)
+        $monthHours = $monthLogs->sum(function ($row) {
+            return abs((float) $row->hours_worked);
+        });
+
+        $monthHours = round($monthHours, 2);
+
+        return view('dashboard', compact('log', 'today', 'monthHours'));
     })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {

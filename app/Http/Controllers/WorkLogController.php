@@ -16,13 +16,28 @@ class WorkLogController extends Controller
     public function index()
     {
         $user  = Auth::user();
-        $today = Carbon::now('Europe/Riga')->toDateString();
+        $now   = Carbon::now('Europe/Riga');
+        $today = $now->toDateString();
 
+        // Today's log
         $log = WorkLog::where('user_id', $user->id)
-            ->where('date', $today)
+            ->whereDate('date', $today)
             ->first();
 
-        return view('work.index', compact('log', 'today'));
+        // Get all this month's logs for the user
+        $monthLogs = WorkLog::where('user_id', $user->id)
+            ->whereYear('date', $now->year)
+            ->whereMonth('date', $now->month)
+            ->get(['hours_worked']);
+
+        // Sum absolute hours_worked (removes minus)
+        $monthHours = $monthLogs->sum(function ($log) {
+            return abs((float) $log->hours_worked);
+        });
+
+        $monthHours = round($monthHours, 2);
+
+        return view('work.index', compact('log', 'today', 'monthHours'));
     }
 
     /**

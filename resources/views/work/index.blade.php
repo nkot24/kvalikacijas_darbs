@@ -9,18 +9,32 @@
     <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
     <div class="py-8 max-w-xl mx-auto text-center" x-data="{ open:false, lunch:'', breaks:0 }">
-        <p class="mb-4 text-lg">Datums: {{ $today }}</p>
+        {{-- Date + this month total --}}
+        <p class="mb-1 text-lg">Datums: {{ $today }}</p>
+        <p class="mb-4 text-lg">
+            Šomēnes nostrādāts: {{ $monthHours }} h
+        </p>
 
+        {{-- Success flash message --}}
         @if (session('success'))
-            <div class="mb-4 text-green-600">{{ session('success') }}</div>
+            <div class="mb-4 text-green-600">
+                {{ session('success') }}
+            </div>
         @endif
 
+        {{-- No log yet for today OR no start_time => show Start button --}}
         @if (!$log || !$log->start_time)
             <form method="POST" action="{{ route('work.start') }}">
                 @csrf
                 <x-primary-button>Sākt darbu</x-primary-button>
             </form>
+
+        {{-- Started but not finished => show start time + End button + modal --}}
         @elseif ($log && !$log->end_time)
+            <p class="mb-4 text-gray-700">
+                Darbs sācies: {{ $log->start_time }}
+            </p>
+
             {{-- Button that opens the modal --}}
             <button type="button"
                     @click="open = true"
@@ -29,8 +43,12 @@
             </button>
 
             {{-- Modal --}}
-            <div x-show="open" x-transition class="fixed inset-0 z-50 flex items-center justify-center">
-                <div class="absolute inset-0 bg-black/40" @click="open=false" aria-hidden="true"></div>
+            <div x-show="open"
+                 x-transition
+                 class="fixed inset-0 z-50 flex items-center justify-center">
+                <div class="absolute inset-0 bg-black/40"
+                     @click="open=false"
+                     aria-hidden="true"></div>
 
                 <div class="relative bg-white rounded-2xl shadow-xl p-6 w-full max-w-md">
                     <h3 class="text-lg font-semibold mb-4">Pabeigt darbu</h3>
@@ -43,16 +61,23 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-1">
                                     Pusdienas laiks (min)
                                 </label>
-                                <input type="number" name="lunch_minutes" x-model="lunch" min="0"
+                                <input type="number"
+                                       name="lunch_minutes"
+                                       x-model="lunch"
+                                       min="0"
                                        placeholder="0"
                                        class="w-full border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 rounded-lg px-3 py-2">
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    Paužu skaits <span class="text-xs text-gray-500">(1 pauze = 10 min)</span>
+                                    Paužu skaits
+                                    <span class="text-xs text-gray-500">(1 pauze = 10 min)</span>
                                 </label>
-                                <input type="number" name="break_count" x-model="breaks" min="0"
+                                <input type="number"
+                                       name="break_count"
+                                       x-model="breaks"
+                                       min="0"
                                        placeholder="0"
                                        class="w-full border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 rounded-lg px-3 py-2">
                             </div>
@@ -72,9 +97,13 @@
                     </form>
                 </div>
             </div>
+
+        {{-- Finished for today --}}
         @else
             <p class="text-gray-600 mt-4">Darbs šodien jau pabeigts.</p>
-            <p class="mt-2">Nostrādāts no {{ $log->start_time }} līdz {{ $log->end_time }}</p>
+            <p class="mt-2">
+                Nostrādāts no {{ $log->start_time }} līdz {{ $log->end_time }}
+            </p>
         @endif
     </div>
 </x-app-layout>
