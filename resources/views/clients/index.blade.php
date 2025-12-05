@@ -10,92 +10,126 @@
 
             <!-- Success flash message -->
             @if (session('success'))
-                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mx-[100px] mb-4" role="alert">
+                <div
+                    class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative
+                           mx-4 sm:mx-6 lg:mx-[100px] mb-4"
+                    role="alert"
+                >
                     <strong class="font-bold">Veiksmīgi!</strong>
                     <span class="block sm:inline">{{ session('success') }}</span>
                 </div>
             @endif
 
-            <!-- White background container with padding and rounded corners -->
-            <div class="bg-white shadow-sm rounded-lg p-6">
+            <div class="bg-white shadow-sm rounded-lg p-4 sm:p-6">
 
-                <!-- Import & Export buttons -->
-                <div class="mb-6 px-[100px] flex flex-col md:flex-row md:items-center gap-4">
-
-                    <!-- Export Button -->
+                <!-- Export / Import / Add Row -->
+                <div
+                    class="mb-6 px-4 sm:px-6 lg:px-[100px]
+                           flex flex-col md:flex-row md:items-center md:justify-between gap-4 flex-wrap"
+                >
                     <a href="{{ route('clients.fullExport') }}"
-                       class="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                       class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">
                         📤 Eksportēt visus klientus
                     </a>
 
-                    <!-- Import Form -->
-                    <form action="{{ route('clients.fullImport') }}" method="POST" enctype="multipart/form-data" class="flex items-center gap-2">
+                    <form action="{{ route('clients.fullImport') }}" method="POST" enctype="multipart/form-data"
+                          class="flex flex-wrap items-center gap-2">
                         @csrf
-                        <label class="block text-sm font-medium text-gray-700">📥 Importēt no Excel:</label>
+                        <label class="text-sm font-medium text-gray-700">📥 Importēt no Excel:</label>
+
                         <input type="file" name="import_file"
-                               class="block text-sm text-gray-500 file:mr-4 file:py-2 file:px-4
-                                      file:rounded file:border-0 file:text-sm file:font-semibold
+                               class="text-xs sm:text-sm text-gray-500
+                                      file:mr-2 file:py-1.5 file:px-3
+                                      file:rounded file:border-0
+                                      file:text-xs sm:file:text-sm file:font-semibold
                                       file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                                required>
+
                         <button type="submit"
-                                class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">
                             Augšupielādēt
                         </button>
                     </form>
 
-                    <!-- Add New Client -->
                     <a href="{{ route('clients.create') }}"
-                       class="inline-block px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                       class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm">
                         + Pievienot jaunu klientu
                     </a>
                 </div>
 
-                <!-- Padding 100px left/right + horizontal scroll -->
-                <div class="overflow-x-auto px-[100px]">
-                    <table class="table-auto w-full min-w-[1000px] border-collapse border border-gray-300 bg-white">
+                <!-- Table Wrapper -->
+                <div class="overflow-x-auto px-2 sm:px-4 lg:px-[100px]">
+                    <table
+                        class="table-auto w-full border-collapse border border-gray-300 bg-white text-xs sm:text-sm"
+                    >
                         <thead>
-                            <tr>
-                                <th class="border border-gray-300 px-4 py-2">Nosaukums</th>
-                                <th class="border border-gray-300 px-4 py-2">Reģistrācijas numurs</th>
-                                <th class="border border-gray-300 px-4 py-2">PVN maksātāja numurs</th>
-                                <th class="border border-gray-300 px-4 py-2">Juridiskā adrese</th>
-                                <th class="border border-gray-300 px-4 py-2">Kontaktpersonas</th>
-                                <th class="border border-gray-300 px-4 py-2">Piegādes adreses</th>
-                                <th class="border border-gray-300 px-4 py-2">Darbības</th>
+                            <tr class="bg-gray-100">
+                                <th class="border border-gray-300 px-3 py-2">Nosaukums</th>
+                                <th class="border border-gray-300 px-3 py-2">Reģistrācijas numurs</th>
+                                <th class="border border-gray-300 px-3 py-2">PVN maksātāja numurs</th>
+                                <th class="border border-gray-300 px-3 py-2">Juridiskā adrese</th>
+                                <th class="border border-gray-300 px-3 py-2">Kontaktpersonas</th>
+                                <th class="border border-gray-300 px-3 py-2">Piegādes adreses</th>
+                                <th class="border border-gray-300 px-3 py-2">Darbības</th>
                             </tr>
                         </thead>
+
                         <tbody>
                             @forelse ($clients as $client)
-                                <tr class="border border-gray-300">
-                                    <td class="border border-gray-300 px-4 py-2">{{ $client->nosaukums }}</td>
-                                    <td class="border border-gray-300 px-4 py-2">{{ $client->registracijas_numurs }}</td>
-                                    <td class="border border-gray-300 px-4 py-2">{{ $client->pvn_maksataja_numurs ?? '-' }}</td>
-                                    <td class="border border-gray-300 px-4 py-2">{{ $client->juridiska_adrese ?? '-' }}</td>
-                                    <td class="border border-gray-300 px-4 py-2">
-                                        <ul class="list-disc pl-5">
-                                            @foreach ($client->contactPersons as $cp)
-                                                <li class="mb-1">
+                                <tr class="border border-gray-300 even:bg-gray-50">
+                                    <td class="border px-3 py-2 align-top">
+                                        {{ $client->nosaukums }}
+                                    </td>
+
+                                    <td class="border px-3 py-2 align-top">
+                                        {{ $client->registracijas_numurs }}
+                                    </td>
+
+                                    <td class="border px-3 py-2 align-top">
+                                        {{ $client->pvn_maksataja_numurs ?? '-' }}
+                                    </td>
+
+                                    <td class="border px-3 py-2 align-top">
+                                        {{ $client->juridiska_adrese ?? '-' }}
+                                    </td>
+
+                                    <td class="border px-3 py-2 align-top">
+                                        <ul class="space-y-1">
+                                            @forelse ($client->contactPersons as $cp)
+                                                <li>
                                                     <strong>{{ $cp->kontakt_personas_vards }}</strong><br>
-                                                    E-pasts: {{ $cp->{'e-pasts'} ?? '-' }}
+                                                    E-pasts: {{ $cp->{'e-pasts'} ?? '-' }}<br>
                                                     Telefons: {{ $cp->telefons ?? '-' }}
                                                 </li>
-                                            @endforeach
+                                            @empty
+                                                <li>-</li>
+                                            @endforelse
                                         </ul>
                                     </td>
-                                    <td class="border border-gray-300 px-4 py-2">
-                                        <ul class="list-disc pl-5">
-                                            @foreach ($client->deliveryAddresses as $da)
-                                                <li class="mb-1">{{ $da->piegades_adrese }}</li>
-                                            @endforeach
-                                        </ul>
-                                    </td>
-                                    <td class="border border-gray-300 px-4 py-2 space-y-2">
-                                        <a href="{{ route('clients.edit', $client) }}" class="text-blue-600 hover:underline block">Rediģēt</a>
 
-                                        <form method="POST" action="{{ route('clients.destroy', $client) }}" onsubmit="return confirm('Vai tiešām vēlaties dzēst šo klientu?');">
+                                    <td class="border px-3 py-2 align-top">
+                                        <ul class="space-y-1">
+                                            @forelse ($client->deliveryAddresses as $da)
+                                                <li>{{ $da->piegades_adrese }}</li>
+                                            @empty
+                                                <li>-</li>
+                                            @endforelse
+                                        </ul>
+                                    </td>
+
+                                    <td class="border px-3 py-2 align-top space-y-2">
+                                        <a href="{{ route('clients.edit', $client) }}"
+                                           class="text-blue-600 hover:underline block">
+                                            Rediģēt
+                                        </a>
+
+                                        <form method="POST" action="{{ route('clients.destroy', $client) }}"
+                                              onsubmit="return confirm('Vai tiešām vēlaties dzēst šo klientu?');">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:underline">Dzēst</button>
+                                            <button type="submit" class="text-red-600 hover:underline">
+                                                Dzēst
+                                            </button>
                                         </form>
                                     </td>
                                 </tr>
