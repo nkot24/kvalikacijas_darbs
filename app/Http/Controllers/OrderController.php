@@ -94,7 +94,8 @@ class OrderController extends Controller
             'piezimes' => $validated['piezimes'] ?? null,
         ]);
 
-        return redirect()->route('orders.index')->with('success', 'Pasūtījums saglabāts veiksmīgi!');
+        return redirect()->route('orders.show', $order->id)
+                 ->with('success', 'Pasūtījums saglabāts veiksmīgi!');
     }
 
     public function show(Order $order)
