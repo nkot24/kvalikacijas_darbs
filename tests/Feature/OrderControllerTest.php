@@ -84,7 +84,9 @@ class OrderControllerTest extends TestCase
 
         $response = $this->post(route('orders.store'), $data);
 
-        $response->assertRedirect(route('orders.index'));
+        $order = Order::firstOrFail();
+        $response->assertRedirect(route('orders.show', $order->id));
+
         $response->assertSessionHas('success', 'Pasūtījums saglabāts veiksmīgi!');
 
         $this->assertDatabaseHas('orders', [
@@ -110,8 +112,10 @@ class OrderControllerTest extends TestCase
         ];
 
         $response = $this->post(route('orders.store'), $data);
+        $order = Order::latest()->first();
 
-        $response->assertRedirect(route('orders.index'));
+
+        $response->assertRedirect(route('orders.show', $order));
         $response->assertSessionHas('success', 'Pasūtījums saglabāts veiksmīgi!');
 
         $this->assertDatabaseHas('orders', [
