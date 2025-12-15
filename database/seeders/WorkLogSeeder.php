@@ -14,7 +14,7 @@ class WorkLogSeeder extends Seeder
     $user = User::firstOrCreate(
         ['name' => 'Test'],
         [
-            'role' => 'worker',
+            'role' => 'admin',
             'password' => bcrypt('password'),
             'visible_password' => 'password',
         ]
