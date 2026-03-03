@@ -11,8 +11,8 @@
     <!-- Original Dashboard Section -->
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900">
+            <div class="rounded-2xl border border-white/10 bg-white/5 shadow-xl">
+                <div class="p-6 text-slate-100">
                     {{ __("You're logged in!") }}
                 </div>
             </div>
@@ -56,10 +56,9 @@
             {{-- Button opens modal instead of posting directly --}}
             <button type="button"
                     @click="open = true"
-                    class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow">
+                    class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl shadow">
                 Beigt darbu
             </button>
-
             {{-- Modal --}}
             <div x-show="open" x-transition class="fixed inset-0 z-50 flex items-center justify-center">
                 <div class="absolute inset-0 bg-black/40" @click="open=false" aria-hidden="true"></div>

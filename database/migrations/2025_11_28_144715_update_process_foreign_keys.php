@@ -9,16 +9,16 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Only run this on MySQL – SQLite cannot handle any of it
         if (Schema::getConnection()->getDriverName() === 'mysql') {
 
-            // Convert to InnoDB (only MySQL)
+            // Ensure tables use InnoDB (required for FK)
             DB::statement('ALTER TABLE process_progresses ENGINE=InnoDB');
             DB::statement('ALTER TABLE process_files ENGINE=InnoDB');
 
-            // process_user: process_id → processes.id
+            // process_user
             Schema::table('process_user', function (Blueprint $table) {
                 $table->dropForeign(['process_id']);
+
                 $table->foreign('process_id')
                     ->references('id')
                     ->on('processes')
@@ -26,9 +26,10 @@ return new class extends Migration
                     ->onUpdate('cascade');
             });
 
-            // tasks: process_id → processes.id
+            // tasks
             Schema::table('tasks', function (Blueprint $table) {
                 $table->dropForeign(['process_id']);
+
                 $table->foreign('process_id')
                     ->references('id')
                     ->on('processes')
@@ -36,9 +37,10 @@ return new class extends Migration
                     ->onUpdate('cascade');
             });
 
-            // process_progresses: process_id → processes.id
+            // process_progresses
             Schema::table('process_progresses', function (Blueprint $table) {
-                $table->dropForeign('process_progresses_process_id_foreign');
+                $table->dropForeign(['process_id']);
+
                 $table->foreign('process_id')
                     ->references('id')
                     ->on('processes')
@@ -46,9 +48,10 @@ return new class extends Migration
                     ->onUpdate('cascade');
             });
 
-            // process_files: process_id → processes.id
+            // process_files
             Schema::table('process_files', function (Blueprint $table) {
-                $table->dropIndex('process_files_process_id_foreign');
+                $table->dropForeign(['process_id']);
+
                 $table->foreign('process_id')
                     ->references('id')
                     ->on('processes')
@@ -60,35 +63,42 @@ return new class extends Migration
 
     public function down(): void
     {
-        // Same – only MySQL supports this
         if (Schema::getConnection()->getDriverName() === 'mysql') {
 
+            // process_user
             Schema::table('process_user', function (Blueprint $table) {
                 $table->dropForeign(['process_id']);
+
                 $table->foreign('process_id')
                     ->references('id')
                     ->on('processes')
                     ->onDelete('cascade');
             });
 
+            // tasks
             Schema::table('tasks', function (Blueprint $table) {
                 $table->dropForeign(['process_id']);
+
                 $table->foreign('process_id')
                     ->references('id')
                     ->on('processes')
                     ->onDelete('cascade');
             });
 
+            // process_progresses
             Schema::table('process_progresses', function (Blueprint $table) {
-                $table->dropForeign('process_progresses_process_id_foreign');
+                $table->dropForeign(['process_id']);
+
                 $table->foreign('process_id')
                     ->references('id')
                     ->on('processes')
                     ->onDelete('cascade');
             });
 
+            // process_files
             Schema::table('process_files', function (Blueprint $table) {
                 $table->dropForeign(['process_id']);
+
                 $table->foreign('process_id')
                     ->references('id')
                     ->on('processes')

@@ -10,9 +10,15 @@ export default {
     ],
 
     theme: {
-        extend: {
+       extend: {
             fontFamily: {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+            },
+            colors: {
+                brand: '#E11D2E',
+                base: '#0B0F14',
+                surface: '#0F172A',
+                muted: '#94A3B8',
             },
         },
     },
