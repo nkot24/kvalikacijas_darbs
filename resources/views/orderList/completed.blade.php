@@ -1,38 +1,42 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Izpildītie iepirkumi</h2>
+        <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-xl text-white leading-tight">
+                Izpildītie iepirkumi
+            </h2>
+            <div class="hidden sm:block text-sm text-slate-400">
+                Meklēšana • Statusi • Vēsture
+            </div>
+        </div>
     </x-slot>
 
     <div class="py-6">
         <div class="max-w-full mx-auto">
 
+            {{-- Success --}}
             @if (session('success'))
-                <div
-                    class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative
-                           mx-4 sm:mx-6 lg:mx-[100px] mb-4"
-                    role="alert"
-                >
-                    <strong class="font-bold">Veiksmīgi!</strong>
-                    <span class="block sm:inline">{{ session('success') }}</span>
+                <div class="mx-4 sm:mx-6 lg:mx-[100px] mb-5 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-emerald-200">
+                    <div class="font-semibold">Veiksmīgi!</div>
+                    <div class="text-sm text-emerald-200/90">{{ session('success') }}</div>
                 </div>
             @endif
 
-            <div class="bg-white shadow-sm rounded-lg p-4 sm:p-6">
+            {{-- Top Controls Card (same style as Orders index) --}}
+            <div class="mx-4 sm:mx-6 lg:mx-[100px] mb-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur shadow-xl">
+                <div class="p-4 sm:p-5 flex flex-col lg:flex-row lg:items-end justify-between gap-4 flex-wrap">
 
-                {{-- Back + search --}}
-                <div class="px-4 sm:px-6 lg:px-[100px]">
-                    <div class="flex items-center justify-between gap-4 flex-wrap mb-4">
+                    <div class="flex items-center gap-3">
                         <a href="{{ route('orderList.index') }}"
-                           class="px-4 py-2 bg-gray-100 text-gray-800 rounded hover:bg-gray-200 text-sm">
+                           class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 text-sm ring-1 ring-white/10 transition">
                             ← Atpakaļ uz aktīvajiem
                         </a>
                     </div>
 
-                    <!-- Meklēšana tikai pēc Nosaukuma / Piegādātāja -->
-                    <form method="GET" action="{{ route('orderList.completed') }}" class="mb-6">
+                    {{-- Search --}}
+                    <form method="GET" action="{{ route('orderList.completed') }}" class="w-full lg:w-auto">
                         <div class="grid grid-cols-1 lg:grid-cols-4 gap-3">
                             <div class="lg:col-span-3">
-                                <label class="block text-xs text-gray-600 mb-1">
+                                <label class="block text-xs text-slate-400 mb-1">
                                     Meklēt (Nosaukums / Piegādātājs)
                                 </label>
                                 <input
@@ -40,110 +44,126 @@
                                     name="q"
                                     value="{{ $q ?? '' }}"
                                     placeholder="piem., skrūves vai Būvniecības SIA"
-                                    class="w-full border rounded p-2 text-sm"
+                                    class="w-full rounded-xl border border-white/10 bg-[#0B0F14]/60 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-500/50 focus:ring-red-500/20"
                                 >
                             </div>
+
                             <div class="flex items-end gap-3">
                                 <button type="submit"
-                                        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">
+                                        class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold shadow">
                                     Meklēt
                                 </button>
+
                                 <a href="{{ route('orderList.completed') }}"
-                                   class="px-4 py-2 bg-gray-100 text-gray-800 rounded hover:bg-gray-200 text-sm">
+                                   class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-sm ring-1 ring-white/10 transition">
                                     Notīrīt
                                 </a>
                             </div>
                         </div>
                     </form>
-                </div>
 
-                {{-- Table wrapper: page won't scroll, only this can --}}
-                <div class="px-4 sm:px-6 lg:px-[100px]">
-                    <div class="overflow-x-auto">
-                        <table
-                            class="table-auto w-full min-w-[1200px] border-collapse border border-gray-300 bg-white text-xs sm:text-sm"
-                        >
-                            <thead>
-                                <tr>
-                                    <th class="border px-3 py-2">Nosaukums</th>
-                                    <th class="border px-3 py-2 text-right">Daudzums</th>
-                                    <th class="border px-3 py-2">Foto</th>
-                                    <th class="border px-3 py-2">Statuss</th>
-                                    <th class="border px-3 py-2">Izveidoja</th>
-                                    <th class="border px-3 py-2">Piegādātājs</th>
-                                    <th class="border px-3 py-2">Kad pasūtīts</th>
-                                    <th class="border px-3 py-2">Kad jāatnāk</th>
-                                    <th class="border px-3 py-2">Kad atnāca</th>
-                                    <th class="border px-3 py-2 w-[180px] text-center">Darbības</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse ($completed as $order)
-                                    <tr class="border even:bg-gray-50">
-                                        <td class="border px-3 py-2">{{ $order->name }}</td>
-                                        <td class="border px-3 py-2 text-right">{{ $order->quantity }}</td>
-                                        <td class="border px-3 py-2">
-                                            @if($order->photo_path)
-                                                <a href="{{ asset('storage/'.$order->photo_path) }}" target="_blank">
-                                                    <img src="{{ asset('storage/'.$order->photo_path) }}"
-                                                         alt="foto"
-                                                         class="h-10 w-10 object-cover rounded">
-                                                </a>
-                                            @else
-                                                —
-                                            @endif
-                                        </td>
-                                        <td class="border px-3 py-2">
-                                            <span class="px-2 py-1 rounded text-xs bg-green-100 text-green-800">
-                                                {{ $order->status }}
-                                            </span>
-                                        </td>
-                                        <td class="border px-3 py-2">
-                                            {{ optional($order->creator)->name ?? '—' }}
-                                        </td>
-                                        <td class="border px-3 py-2">
-                                            {{ $order->supplier_name ?? '—' }}
-                                        </td>
-                                        <td class="border px-3 py-2">
-                                            {{ $order->ordered_at?->format('Y-m-d') ?? '—' }}
-                                        </td>
-                                        <td class="border px-3 py-2">
-                                            {{ $order->expected_at?->format('Y-m-d') ?? '—' }}
-                                        </td>
-                                        <td class="border px-3 py-2 font-semibold">
-                                            {{ $order->arrived_at?->format('Y-m-d') ?? '—' }}
-                                        </td>
-                                        <td class="border px-3 py-2 text-center space-x-3 whitespace-nowrap">
-                                            <a href="{{ route('orderList.edit', $order) }}"
-                                               class="text-blue-600 hover:text-blue-800">
-                                                Skat./rediģēt
-                                            </a>
-                                            <form method="POST"
-                                                  class="inline"
-                                                  action="{{ route('orderList.destroy', $order) }}"
-                                                  onsubmit="return confirm('Vai tiešām dzēst šo ierakstu?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit"
-                                                        class="text-red-600 hover:text-red-800">
-                                                    Dzēst
-                                                </button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="10" class="text-center py-4">
-                                            Nav izpildītu iepirkumu.
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
                 </div>
-
             </div>
+
+            {{-- Table Card (EXACT same style as Orders index) --}}
+            <div class="overflow-x-auto mx-2 sm:mx-4 lg:mx-[100px] rounded-2xl border border-white/10 bg-white/5 backdrop-blur shadow-xl">
+                <table class="table-auto w-full text-xs sm:text-sm">
+                    <thead class="bg-white/5">
+                        <tr class="text-left text-slate-200">
+                            <th class="px-4 py-3 whitespace-nowrap">Nosaukums</th>
+                            <th class="px-4 py-3 whitespace-nowrap text-right">Daudzums</th>
+                            <th class="px-4 py-3 whitespace-nowrap">Foto</th>
+                            <th class="px-4 py-3 whitespace-nowrap">Statuss</th>
+                            <th class="px-4 py-3 whitespace-nowrap">Izveidoja</th>
+                            <th class="px-4 py-3 whitespace-nowrap">Piegādātājs</th>
+                            <th class="px-4 py-3 whitespace-nowrap">Kad pasūtīts</th>
+                            <th class="px-4 py-3 whitespace-nowrap">Kad jāatnāk</th>
+                            <th class="px-4 py-3 whitespace-nowrap">Kad atnāca</th>
+                            <th class="px-4 py-3 whitespace-nowrap text-center">Darbības</th>
+                        </tr>
+                    </thead>
+
+                    <tbody class="divide-y divide-white/10">
+                        @forelse ($completed as $order)
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="px-4 py-3 max-w-[260px] truncate text-white">
+                                    {{ $order->name }}
+                                </td>
+
+                                <td class="px-4 py-3 max-w-[120px] truncate text-right text-slate-200">
+                                    {{ $order->quantity }}
+                                </td>
+
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    @if($order->photo_path)
+                                        <a href="{{ asset('storage/'.$order->photo_path) }}" target="_blank" class="inline-block">
+                                            <img src="{{ asset('storage/'.$order->photo_path) }}"
+                                                 alt="foto"
+                                                 class="h-10 w-10 object-cover rounded-xl ring-1 ring-white/10">
+                                        </a>
+                                    @else
+                                        <span class="text-slate-500">—</span>
+                                    @endif
+                                </td>
+
+                                <td class="px-4 py-3 max-w-[180px] truncate">
+                                    <span class="inline-flex items-center rounded-lg px-2.5 py-1 text-xs ring-1 ring-white/10 bg-emerald-500/15 text-emerald-200">
+                                        {{ $order->status }}
+                                    </span>
+                                </td>
+
+                                <td class="px-4 py-3 max-w-[200px] truncate text-slate-300">
+                                    {{ optional($order->creator)->name ?? '—' }}
+                                </td>
+
+                                <td class="px-4 py-3 max-w-[220px] truncate text-slate-300">
+                                    {{ $order->supplier_name ?? '—' }}
+                                </td>
+
+                                <td class="px-4 py-3 max-w-[160px] truncate text-slate-300">
+                                    {{ $order->ordered_at?->format('Y-m-d') ?? '—' }}
+                                </td>
+
+                                <td class="px-4 py-3 max-w-[160px] truncate text-slate-300">
+                                    {{ $order->expected_at?->format('Y-m-d') ?? '—' }}
+                                </td>
+
+                                <td class="px-4 py-3 max-w-[160px] truncate text-slate-200 font-semibold">
+                                    {{ $order->arrived_at?->format('Y-m-d') ?? '—' }}
+                                </td>
+
+                                <td class="px-4 py-3 whitespace-nowrap text-center space-x-3">
+                                    <a href="{{ route('orderList.edit', $order) }}"
+                                       class="text-red-300 hover:text-red-200 hover:underline underline-offset-4">
+                                        Skat./rediģēt
+                                    </a>
+
+                                    <form method="POST"
+                                          class="inline"
+                                          action="{{ route('orderList.destroy', $order) }}"
+                                          onsubmit="return confirm('Vai tiešām dzēst šo ierakstu?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                                class="text-slate-300 hover:text-white hover:underline underline-offset-4">
+                                            Dzēst
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="10" class="text-center py-10 text-slate-400">
+                                    Nav izpildītu iepirkumu.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-6 h-1 mx-4 sm:mx-6 lg:mx-[100px] bg-gradient-to-r from-transparent via-red-600/40 to-transparent rounded"></div>
+
         </div>
     </div>
 </x-app-layout>
