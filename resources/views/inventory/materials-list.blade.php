@@ -1,81 +1,141 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Izmantotie materiāli') }}
-        </h2>
+        <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-xl text-white leading-tight">
+                {{ __('Izmantotie materiāli') }}
+            </h2>
+            <div class="hidden sm:block text-sm text-slate-400">
+                Noliktava • Materiāli • Grāmatvedība
+            </div>
+        </div>
     </x-slot>
 
-    <div class="py-8">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+    <div class="py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-                <form method="GET" class="mb-4 flex flex-wrap gap-2 items-center">
-                    <input type="text" name="q" value="{{ $q }}" placeholder="Meklēt pēc svītrkoda"
-                           class="border rounded p-2 flex-1">
-                    <label class="flex items-center gap-2 text-sm">
-                        <input type="checkbox" name="only_not_accounted" value="1" {{ $onlyNotAccounted ? 'checked' : '' }}>
-                        Tikai neiegrāmatotie
-                    </label>
-                    <button class="px-4 py-2 rounded bg-blue-600 text-white">Meklēt</button>
-                    <a href="{{ route('inventory.materials.index') }}" class="px-4 py-2 rounded border">Notīrīt</a>
-                    <a href="{{ route('inventory.materials.scan') }}" class="px-3 py-2 rounded border">Atpakaļ uz skeneri</a>
-                </form>
+            {{-- Controls Card --}}
+            <div class="mb-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur shadow-xl">
+                <div class="p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 flex-wrap">
 
-                <div class="flex gap-2 mb-3">
-                    <button id="bulk-delete" class="px-3 py-2 rounded bg-red-600 text-white">Dzēst atlasītos</button>
+                    <form method="GET" class="flex flex-wrap gap-3 items-center w-full lg:w-auto">
+                        <div class="relative w-full sm:w-96">
+                            <input type="text" name="q" value="{{ $q }}"
+                                   placeholder="Meklēt pēc svītrkoda"
+                                   class="w-full rounded-xl border border-white/10 bg-[#0B0F14]/60 px-3 py-2 text-sm text-white placeholder:text-slate-500
+                                          focus:border-red-500/50 focus:ring-red-500/20">
+                        </div>
+
+                        <label class="inline-flex items-center gap-2 text-sm text-slate-300 rounded-xl bg-white/5 px-3 py-2 ring-1 ring-white/10">
+                            <input type="checkbox"
+                                   name="only_not_accounted"
+                                   value="1"
+                                   {{ $onlyNotAccounted ? 'checked' : '' }}
+                                   class="rounded border-white/20 bg-[#0B0F14]/60 text-red-600 focus:ring-red-500/30">
+                            Tikai neiegrāmatotie
+                        </label>
+
+                        <button class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold shadow">
+                            Meklēt
+                        </button>
+
+                        <a href="{{ route('inventory.materials.index') }}"
+                           class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 text-sm ring-1 ring-white/10 transition">
+                            Notīrīt
+                        </a>
+
+                        <a href="{{ route('inventory.materials.scan') }}"
+                           class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 text-sm ring-1 ring-white/10 transition">
+                            ← Atpakaļ uz skeneri
+                        </a>
+                    </form>
+
+                    <button id="bulk-delete"
+                            class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold shadow">
+                        Dzēst atlasītos
+                    </button>
                 </div>
+            </div>
 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full border">
-                        <thead>
-                            <tr class="bg-gray-100">
-                                <th class="p-2 border text-center">
-                                    <input type="checkbox" id="check-all">
+            {{-- Table Card --}}
+            <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur shadow-xl">
+                <div class="overflow-x-auto lg:overflow-visible">
+                    <table class="w-full text-sm table-fixed lg:table-auto">
+                        <thead class="bg-white/5">
+                            <tr class="text-left text-slate-200">
+                                <th class="px-4 py-3 text-center w-[60px]">
+                                    <input type="checkbox" id="check-all"
+                                           class="rounded border-white/20 bg-[#0B0F14]/60 text-red-600 focus:ring-red-500/30">
                                 </th>
-                                <th class="p-2 border text-left">Svītrkods</th>
-                                <th class="p-2 border text-right">Daudzums</th>
-                                <th class="p-2 border text-left">Izveidoja</th>
-                                <th class="p-2 border text-left">Grāmatvedība</th>
-                                <th class="p-2 border text-left">Datums</th>
+                                <th class="px-4 py-3 whitespace-nowrap">Svītrkods</th>
+                                <th class="px-4 py-3 whitespace-nowrap text-right">Daudzums</th>
+                                <th class="px-4 py-3 whitespace-nowrap hidden md:table-cell">Izveidoja</th>
+                                <th class="px-4 py-3 whitespace-nowrap">Grāmatvedība</th>
+                                <th class="px-4 py-3 whitespace-nowrap hidden lg:table-cell">Datums</th>
                             </tr>
                         </thead>
-                        <tbody>
+
+                        <tbody class="divide-y divide-white/10">
                         @forelse ($scans as $m)
-                            <tr data-id="{{ $m->id }}">
-                                <td class="p-2 border text-center">
-                                    <input type="checkbox" class="row-check" value="{{ $m->id }}" {{ $m->accounted ? 'checked' : '' }}>
+                            <tr data-id="{{ $m->id }}" class="hover:bg-white/5 transition-colors">
+                                <td class="px-4 py-3 text-center">
+                                    <input type="checkbox"
+                                           class="row-check rounded border-white/20 bg-[#0B0F14]/60 text-red-600 focus:ring-red-500/30"
+                                           value="{{ $m->id }}"
+                                           {{ $m->accounted ? 'checked' : '' }}>
                                 </td>
-                                <td class="p-2 border font-mono">{{ $m->svitr_kods }}</td>
-                                <td class="p-2 border text-right">{{ $m->qty }}</td>
-                                <td class="p-2 border">{{ $m->creator->name ?? '—' }}</td>
-                                <td class="p-2 border">
-                                    <span class="acc-status {{ $m->accounted ? 'text-green-700' : 'text-orange-700' }}">
+
+                                <td class="px-4 py-3 font-mono text-white break-words">
+                                    {{ $m->svitr_kods }}
+                                </td>
+
+                                <td class="px-4 py-3 text-right text-slate-200">
+                                    {{ $m->qty }}
+                                </td>
+
+                                <td class="px-4 py-3 text-slate-300 hidden md:table-cell">
+                                    {{ $m->creator->name ?? '—' }}
+                                </td>
+
+                                <td class="px-4 py-3">
+                                    <span class="acc-status inline-flex items-center rounded-xl px-3 py-1 text-xs ring-1 ring-white/10
+                                        {{ $m->accounted ? 'bg-emerald-500/15 text-emerald-200' : 'bg-amber-500/15 text-amber-200' }}">
                                         {{ $m->accounted ? 'Ievadīts' : 'Nav ievadīts' }}
                                     </span>
-                                    <div class="text-xs text-gray-500 acc-when">
+                                    <div class="text-xs text-slate-400 mt-1 acc-when">
                                         {{ $m->accounted_at ? $m->accounted_at->format('Y-m-d H:i') : '' }}
                                     </div>
                                 </td>
-                                <td class="p-2 border text-sm text-gray-600">
+
+                                <td class="px-4 py-3 text-slate-300 hidden lg:table-cell">
                                     {{ $m->created_at->format('Y-m-d H:i') }}
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="6" class="p-4 text-center text-gray-500">Nav ierakstu.</td></tr>
+                            <tr>
+                                <td colspan="6" class="py-10 text-center text-slate-400">
+                                    Nav ierakstu.
+                                </td>
+                            </tr>
                         @endforelse
                         </tbody>
                     </table>
                 </div>
+            </div>
 
-                <div class="mt-4">
+            {{-- Pagination --}}
+            <div class="mt-6">
+                <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-4">
                     {{ $scans->links() }}
                 </div>
-
-                <div id="bulk-status" class="mt-3 text-sm text-gray-600"></div>
             </div>
+
+            <div id="bulk-status" class="mt-3 text-sm text-slate-300"></div>
+
+            <div class="mt-6 h-1 bg-gradient-to-r from-transparent via-red-600/40 to-transparent rounded"></div>
         </div>
     </div>
 
+    {{-- JS unchanged except badge class update --}}
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const token = @json(csrf_token());
@@ -128,22 +188,20 @@
                     if (!row) return;
                     const acc = row.querySelector('.acc-status');
                     const when = row.querySelector('.acc-when');
-                    if (acc) {
-                        if (accounted) {
-                            acc.textContent = 'Ievadīts';
-                            acc.classList.remove('text-orange-700');
-                            acc.classList.add('text-green-700');
-                            const now = new Date();
-                            const pad = n => String(n).padStart(2,'0');
-                            when.textContent = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
-                        } else {
-                            acc.textContent = 'Nav ievadīts';
-                            acc.classList.remove('text-green-700');
-                            acc.classList.add('text-orange-700');
-                            when.textContent = '';
-                        }
+
+                    if (accounted) {
+                        acc.textContent = 'Ievadīts';
+                        acc.className = 'acc-status inline-flex items-center rounded-xl px-3 py-1 text-xs ring-1 ring-white/10 bg-emerald-500/15 text-emerald-200';
+                        const now = new Date();
+                        const pad = n => String(n).padStart(2,'0');
+                        when.textContent = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+                    } else {
+                        acc.textContent = 'Nav ievadīts';
+                        acc.className = 'acc-status inline-flex items-center rounded-xl px-3 py-1 text-xs ring-1 ring-white/10 bg-amber-500/15 text-amber-200';
+                        when.textContent = '';
                     }
                 });
+                status.textContent = '';
             } else {
                 status.textContent = data.message || 'Kļūda atzīmējot kā ievadītu.';
             }

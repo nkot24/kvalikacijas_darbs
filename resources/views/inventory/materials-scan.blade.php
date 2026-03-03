@@ -1,41 +1,76 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Skenēt izmantotos materiālus') }}
-        </h2>
+        <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-xl text-white leading-tight">
+                {{ __('Skenēt izmantotos materiālus') }}
+            </h2>
+            <div class="hidden sm:block text-sm text-slate-400">
+                Noliktava • Materiāli • Skenēšana
+            </div>
+        </div>
     </x-slot>
 
-    <div class="py-8">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+    <div class="py-6">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
-                <!-- Scanner Section -->
-                <div class="flex flex-col items-center">
-                    <div id="reader" style="width:100%;max-width:520px;"></div>
+            {{-- Main Card --}}
+            <div class="rounded-2xl border border-white/10 bg-white/5 backdrop-blur shadow-xl">
+                <div class="p-5 sm:p-6">
 
-                    <div id="result" class="mt-4 p-3 border rounded bg-gray-50 text-sm w-full text-center">
-                        Gatavs skenēšanai.
+                    <div class="grid gap-6 lg:grid-cols-2">
+                        {{-- Left: Camera --}}
+                        <div>
+                            <div class="rounded-2xl border border-white/10 bg-[#0B0F14]/40 p-3">
+                                <div id="reader" class="w-full" style="max-width:520px;"></div>
+                            </div>
+
+                            <div class="mt-4">
+                                <button id="scanBtn"
+                                        class="w-full py-3 text-base sm:text-lg font-semibold rounded-xl bg-red-600 hover:bg-red-700 text-white shadow">
+                                    SKENĒT
+                                </button>
+
+                                <p class="text-sm text-slate-400 mt-3">
+                                    Kamera startējas automātiski. Nospiediet “SKENĒT” un turiet QR vai svītrkodu centrā.
+                                </p>
+                            </div>
+                        </div>
+
+                        {{-- Right: Status + Manual --}}
+                        <div>
+                            <div id="result"
+                                 class="rounded-2xl border border-white/10 bg-[#0B0F14]/60 px-4 py-4 text-sm text-slate-200">
+                                Gatavs skenēšanai.
+                            </div>
+
+                            <div class="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
+                                <div class="text-sm font-semibold text-white mb-3">
+                                    Manuāla pievienošana
+                                </div>
+
+                                <form id="manualForm" class="flex gap-2" onsubmit="return false;">
+                                    <input id="manualCode" type="text"
+                                           class="flex-1 rounded-xl border border-white/10 bg-[#0B0F14]/60 px-3 py-2 text-sm text-white placeholder:text-slate-500
+                                                  focus:border-red-500/50 focus:ring-red-500/20"
+                                           placeholder="Ievadiet kodu vai materiāla nosaukumu">
+                                    <button id="manualBtn"
+                                            class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm font-semibold ring-1 ring-white/10 transition">
+                                        Pievienot
+                                    </button>
+                                </form>
+
+                                <div class="mt-3 text-xs text-slate-400">
+                                    Padoms: vari ievadīt svītrkodu un uzreiz apstiprināt.
+                                </div>
+                            </div>
+
+                            <div class="mt-5 h-1 bg-gradient-to-r from-transparent via-red-600/40 to-transparent rounded"></div>
+                        </div>
                     </div>
 
-                    <button id="scanBtn"
-                        class="mt-4 w-full py-3 text-lg font-semibold rounded bg-blue-600 hover:bg-blue-700 text-white">
-                        SKENĒT
-                    </button>
-
-                    <p class="text-sm text-gray-500 mt-2 text-center">
-                        Kamera startējas automātiski. Nospiediet “SKENĒT” un turiet QR vai svītrkodu centrā.
-                    </p>
-
-                    <!-- Manual input form -->
-                    <form id="manualForm" class="mt-6 flex gap-2 w-full max-w-md" onsubmit="return false;">
-                        <input id="manualCode" type="text"
-                               class="flex-1 border rounded p-2"
-                               placeholder="Ievadiet kodu vai materiāla nosaukumu">
-                        <button id="manualBtn" class="px-4 rounded bg-gray-200 hover:bg-gray-300">Pievienot</button>
-                    </form>
                 </div>
-
             </div>
+
         </div>
     </div>
 
@@ -66,39 +101,46 @@
         function showAddForm(code) {
             resultDiv.innerHTML = `
                 <div class="space-y-3">
-                    <div class="text-green-700">
-                        ✅ Nolasīts kods: <strong>${code}</strong>
+                    <div class="text-emerald-200">
+                        ✅ Nolasīts kods: <strong class="text-white">${code}</strong>
                     </div>
-                    <label class="block text-left">
-                        <span class="text-sm font-medium">Daudzums</span>
+
+                    <label class="block">
+                        <span class="text-xs font-medium text-slate-300">Daudzums</span>
                         <input id="mv-qty" type="number" min="1" step="1" value="1"
-                               class="w-full border rounded p-2">
+                               class="mt-1 w-full rounded-xl border border-white/10 bg-[#0B0F14]/60 px-3 py-2 text-sm text-white
+                                      focus:border-red-500/50 focus:ring-red-500/20">
                     </label>
-                    <button id="mv-submit" class="w-full px-4 py-2 rounded bg-blue-600 text-white">
+
+                    <button id="mv-submit" class="w-full px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold shadow">
                         Saglabāt
                     </button>
-                    <div id="mv-status" class="text-sm text-gray-600 text-center"></div>
+
+                    <div id="mv-status" class="text-sm text-slate-300 text-center"></div>
                 </div>
             `;
 
             document.getElementById('mv-submit').addEventListener('click', async () => {
                 const qty = parseInt(document.getElementById('mv-qty').value, 10);
                 const status = document.getElementById('mv-status');
+
                 if (!qty || qty < 1) {
                     status.textContent = 'Ievadiet derīgu daudzumu.';
-                    status.className = 'text-sm text-red-600 text-center';
+                    status.className = 'text-sm text-red-300 text-center';
                     return;
                 }
 
                 status.textContent = 'Saglabāju...';
+                status.className = 'text-sm text-slate-300 text-center';
+
                 const data = await saveMaterial(code, qty);
                 if (data.ok) {
                     status.textContent = 'Saglabāts ✓';
-                    status.className = 'text-sm text-green-600 text-center';
+                    status.className = 'text-sm text-emerald-200 text-center';
                     if (navigator.vibrate) navigator.vibrate(40);
                 } else {
                     status.textContent = data.message || 'Kļūda saglabājot.';
-                    status.className = 'text-sm text-red-600 text-center';
+                    status.className = 'text-sm text-red-300 text-center';
                 }
             });
         }
@@ -141,10 +183,10 @@
 
         async function startCamera() {
             try {
-                await html5QrCode.start({ facingMode: "environment" }, startOpts, onDecode);
-                resultDiv.innerHTML = '<span class="text-gray-600">Kamera startēta. Nospiediet “SKENĒT”.</span>';
+                await html5QrCode.start({ facingMode: "environment" }, startOpts, onDecode, () => {});
+                resultDiv.innerHTML = '<span class="text-slate-300">Kamera startēta. Nospiediet “SKENĒT”.</span>';
             } catch {
-                resultDiv.innerHTML = '<span class="text-red-700">Neizdevās startēt kameru.</span>';
+                resultDiv.innerHTML = '<span class="text-red-300">Neizdevās startēt kameru.</span>';
             }
         }
 
