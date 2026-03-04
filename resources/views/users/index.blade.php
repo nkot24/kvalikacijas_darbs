@@ -1,128 +1,128 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Lietotāju saraksts
-        </h2>
+        <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-xl text-white leading-tight">
+                Lietotāju saraksts
+            </h2>
+            <div class="hidden sm:block text-sm text-slate-400">
+                Lietotāji • Imports • Eksports
+            </div>
+        </div>
     </x-slot>
 
     <div class="py-6">
         <div class="max-w-full mx-auto">
 
-            <!-- Flash message -->
+            {{-- Success --}}
             @if (session('success'))
-                <div
-                    class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative
-                           mx-4 sm:mx-6 lg:mx-[100px] mb-4"
-                    role="alert"
-                >
-                    <strong class="font-bold">Veiksmīgi!</strong>
-                    <span class="block sm:inline">{{ session('success') }}</span>
+                <div class="mx-4 sm:mx-6 lg:mx-[100px] mb-5 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-emerald-200">
+                    <div class="font-semibold">Veiksmīgi!</div>
+                    <div class="text-sm text-emerald-200/90">{{ session('success') }}</div>
                 </div>
             @endif
 
-            <!-- White container -->
-            <div class="bg-white shadow-sm rounded-lg p-4 sm:p-6">
+            {{-- Controls Card (same style as orders.index top card) --}}
+            <div class="mx-4 sm:mx-6 lg:mx-[100px] mb-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur shadow-xl">
+                <div class="p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 flex-wrap">
 
-                <!-- Buttons: Export, Import, Create -->
-                <div
-                    class="mb-6 px-4 sm:px-6 lg:px-[100px]
-                           flex flex-col md:flex-row md:items-center md:justify-between gap-4 flex-wrap"
-                >
-                    <!-- Export -->
                     <a href="{{ route('users.export') }}"
-                       class="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">
+                       class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm ring-1 ring-white/10 transition">
                         📤 Eksportēt lietotājus
                     </a>
 
-                    <!-- Import -->
                     <form action="{{ route('users.import') }}" method="POST" enctype="multipart/form-data"
                           class="flex flex-wrap items-center gap-2">
                         @csrf
 
-                        <label class="text-sm font-medium text-gray-700">
-                            📥 Importēt no Excel:
-                        </label>
+                        <label class="text-sm text-slate-400">📥</label>
 
                         <input type="file" name="import_file"
-                               class="block max-w-full text-xs sm:text-sm text-gray-500
-                                      file:py-1.5 file:px-3
-                                      file:text-xs sm:file:text-sm
-                                      file:mr-2
-                                      file:rounded file:border-0
-                                      file:bg-blue-50 file:text-blue-700
-                                      hover:file:bg-blue-100"
+                               class="text-xs sm:text-sm text-slate-300
+                                      file:mr-2 file:py-2 file:px-3
+                                      file:rounded-xl file:border-0
+                                      file:text-xs sm:file:text-sm file:font-semibold
+                                      file:bg-white/10 file:text-white hover:file:bg-white/15
+                                      cursor-pointer"
                                required>
 
                         <button type="submit"
-                                class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">
+                                class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm ring-1 ring-white/10 transition">
                             Augšupielādēt
                         </button>
                     </form>
 
-                    <!-- Add New -->
                     <a href="{{ route('users.create') }}"
-                       class="inline-block px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm">
+                       class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold shadow">
                         + Pievienot lietotāju
                     </a>
+
                 </div>
-
-                <!-- Table area (page doesn't scroll, only this can) -->
-                <div class="px-4 sm:px-6 lg:px-[100px]">
-                    <div class="overflow-x-auto">
-                        <table
-                            class="min-w-[700px] w-full border-collapse border border-gray-300 bg-white text-xs sm:text-sm"
-                        >
-                            <thead>
-                                <tr class="bg-gray-100">
-                                    <th class="border px-2 sm:px-3 py-2">ID</th>
-                                    <th class="border px-2 sm:px-3 py-2">Vārds</th>
-                                    <th class="border px-2 sm:px-3 py-2">Loma</th>
-                                    <th class="border px-2 sm:px-3 py-2">Parole</th>
-                                    <th class="border px-2 sm:px-3 py-2">Darbības</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                @foreach ($users as $user)
-                                    <tr class="even:bg-gray-50">
-                                        <td class="border px-2 sm:px-3 py-2">
-                                            {{ $user->id }}
-                                        </td>
-                                        <td class="border px-2 sm:px-3 py-2">
-                                            {{ $user->name }}
-                                        </td>
-                                        <td class="border px-2 sm:px-3 py-2">
-                                            {{ ucfirst($user->role) }}
-                                        </td>
-                                        <td class="border px-2 sm:px-3 py-2 font-mono break-all">
-                                            {{ $user->visible_password ?? '-' }}
-                                        </td>
-                                        <td class="border px-2 sm:px-3 py-2 whitespace-nowrap">
-                                            <a href="{{ route('users.edit', $user) }}"
-                                               class="text-blue-600 hover:underline mr-2">
-                                                Rediģēt
-                                            </a>
-
-                                            <form method="POST"
-                                                  action="{{ route('users.destroy', $user) }}"
-                                                  class="inline"
-                                                  onsubmit="return confirm('Vai tiešām vēlaties dzēst šo lietotāju?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit"
-                                                        class="text-red-600 hover:underline">
-                                                    Dzēst
-                                                </button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
             </div>
+
+            {{-- Table Card (EXACT same as orders.index) --}}
+            <div class="overflow-x-auto mx-2 sm:mx-4 lg:mx-[100px] rounded-2xl border border-white/10 bg-white/5 backdrop-blur shadow-xl">
+                <table class="table-auto w-full text-xs sm:text-sm">
+                    <thead class="bg-white/5">
+                        <tr class="text-left text-slate-200">
+                            <th class="px-4 py-3 whitespace-nowrap">ID</th>
+                            <th class="px-4 py-3 whitespace-nowrap">Vārds</th>
+                            <th class="px-4 py-3 whitespace-nowrap">Loma</th>
+                            <th class="px-4 py-3 whitespace-nowrap">Parole</th>
+                            <th class="px-4 py-3 whitespace-nowrap text-center">Darbības</th>
+                        </tr>
+                    </thead>
+
+                    <tbody class="divide-y divide-white/10">
+                        @forelse ($users as $user)
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="px-4 py-3 max-w-[90px] truncate text-white">
+                                    {{ $user->id }}
+                                </td>
+
+                                <td class="px-4 py-3 max-w-[240px] truncate text-slate-200">
+                                    {{ $user->name }}
+                                </td>
+
+                                <td class="px-4 py-3 max-w-[160px] truncate text-slate-200">
+                                    {{ ucfirst($user->role) }}
+                                </td>
+
+                                <td class="px-4 py-3 max-w-[320px] truncate text-slate-200 font-mono">
+                                    {{ $user->visible_password ?? '-' }}
+                                </td>
+
+                                <td class="px-4 py-3 whitespace-nowrap text-center space-x-3">
+                                    <a href="{{ route('users.edit', $user) }}"
+                                       class="text-red-300 hover:text-red-200 hover:underline underline-offset-4">
+                                        Rediģēt
+                                    </a>
+
+                                    <form method="POST"
+                                          action="{{ route('users.destroy', $user) }}"
+                                          class="inline"
+                                          onsubmit="return confirm('Vai tiešām vēlaties dzēst šo lietotāju?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                                class="text-slate-300 hover:text-white hover:underline underline-offset-4">
+                                            Dzēst
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="text-center py-10 text-slate-400">
+                                    Nav pieejami lietotāji.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-6 h-1 mx-4 sm:mx-6 lg:mx-[100px] bg-gradient-to-r from-transparent via-red-600/40 to-transparent rounded"></div>
+
         </div>
     </div>
 </x-app-layout>
