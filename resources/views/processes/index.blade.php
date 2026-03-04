@@ -1,124 +1,139 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Procesu saraksts
-        </h2>
+        <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-xl text-white leading-tight">
+                Procesu saraksts
+            </h2>
+            <div class="hidden sm:block text-sm text-slate-400">
+                Procesi • Kārtošana • Lietotāji
+            </div>
+        </div>
     </x-slot>
 
     <div class="py-6">
         <div class="max-w-full mx-auto">
 
+            {{-- Success --}}
             @if (session('success'))
-                <div
-                    class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative
-                           mx-4 sm:mx-6 lg:mx-[100px] mb-4"
-                    role="alert"
-                >
-                    <strong class="font-bold">Veiksmīgi!</strong>
-                    <span class="block sm:inline">{{ session('success') }}</span>
+                <div class="mx-4 sm:mx-6 lg:mx-[100px] mb-5 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-emerald-200">
+                    <div class="font-semibold">Veiksmīgi!</div>
+                    <div class="text-sm text-emerald-200/90">{{ session('success') }}</div>
                 </div>
             @endif
 
-            <div class="bg-white shadow-sm rounded-lg p-4 sm:p-6">
+            {{-- Top Controls Card --}}
+            <div class="mx-4 sm:mx-6 lg:mx-[100px] mb-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur shadow-xl">
+                <div class="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 flex-wrap">
+                    <div class="text-sm text-slate-400">
+                        Pārvaldiet ražošanas procesus un tiem piesaistītos lietotājus.
+                    </div>
 
-                <!-- Add Process Button -->
-                <div class="mb-6 px-4 sm:px-6 lg:px-[100px]">
                     <a href="{{ route('processes.create') }}"
-                       class="inline-block px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm">
+                       class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold shadow">
                         + Pievienot jaunu procesu
                     </a>
                 </div>
-
-                <!-- Processes Table (only this area can scroll horizontally) -->
-                <div class="px-4 sm:px-6 lg:px-[100px]">
-                    <div class="overflow-x-auto">
-                        <table
-                            class="min-w-[800px] w-full table-auto border-collapse border border-gray-300 bg-white text-xs sm:text-sm"
-                        >
-                            <thead>
-                                <tr class="bg-gray-100">
-                                    <th class="border px-3 py-2">ID</th>
-                                    <th class="border px-3 py-2">Nosaukums</th>
-                                    <th class="border px-3 py-2">Lietotāji</th>
-                                    <th class="border px-3 py-2">Darbības</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse ($processes as $process)
-                                    <tr class="even:bg-gray-50">
-                                        <td class="border px-3 py-2">{{ $process->id }}</td>
-                                        <td class="border px-3 py-2">{{ $process->processa_nosaukums }}</td>
-                                        <td class="border px-3 py-2">
-                                            @forelse ($process->users as $user)
-                                                <span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded mr-1 mb-1">
-                                                    {{ $user->name }}
-                                                </span>
-                                            @empty
-                                                <span class="text-gray-400 text-sm">Nav pievienotu lietotāju</span>
-                                            @endforelse
-                                        </td>
-                                        <td class="border px-3 py-2">
-                                            <div class="flex flex-wrap items-center gap-2">
-                                                <!-- UP -->
-                                                <form action="{{ route('processes.update', $process) }}"
-                                                      method="POST"
-                                                      class="inline">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <input type="hidden" name="swap" value="up">
-                                                    <button type="submit"
-                                                            class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-xs"
-                                                            title="Pārvietot uz augšu">
-                                                        ▲
-                                                    </button>
-                                                </form>
-
-                                                <!-- DOWN -->
-                                                <form action="{{ route('processes.update', $process) }}"
-                                                      method="POST"
-                                                      class="inline">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <input type="hidden" name="swap" value="down">
-                                                    <button type="submit"
-                                                            class="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300 text-xs"
-                                                            title="Pārvietot uz leju">
-                                                        ▼
-                                                    </button>
-                                                </form>
-
-                                                <a href="{{ route('processes.edit', $process) }}"
-                                                   class="text-blue-600 hover:underline text-sm">
-                                                    Rediģēt
-                                                </a>
-
-                                                <form action="{{ route('processes.destroy', $process) }}"
-                                                      method="POST"
-                                                      onsubmit="return confirm('Vai tiešām vēlaties dzēst šo procesu?');"
-                                                      class="inline">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit"
-                                                            class="text-red-600 hover:underline text-sm">
-                                                        Dzēst
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="4" class="text-center py-4">
-                                            Nav pieejamu procesu.
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
             </div>
+
+            {{-- Table Card (Orders index style) --}}
+            <div class="overflow-x-auto mx-2 sm:mx-4 lg:mx-[100px] rounded-2xl border border-white/10 bg-white/5 backdrop-blur shadow-xl">
+                <table class="table-auto w-full text-xs sm:text-sm">
+                    <thead class="bg-white/5">
+                        <tr class="text-left text-slate-200">
+                            <th class="px-4 py-3 whitespace-nowrap">ID</th>
+                            <th class="px-4 py-3 whitespace-nowrap">Nosaukums</th>
+                            <th class="px-4 py-3 whitespace-nowrap">Lietotāji</th>
+                            <th class="px-4 py-3 whitespace-nowrap text-center w-[220px]">Darbības</th>
+                        </tr>
+                    </thead>
+
+                    <tbody class="divide-y divide-white/10">
+                        @forelse ($processes as $process)
+                            <tr class="hover:bg-white/5 transition">
+
+                                <td class="px-4 py-3 text-white whitespace-nowrap">
+                                    {{ $process->id }}
+                                </td>
+
+                                <td class="px-4 py-3 text-slate-200 break-words">
+                                    {{ $process->processa_nosaukums }}
+                                </td>
+
+                                <td class="px-4 py-3">
+                                    <div class="flex flex-wrap gap-2">
+                                        @forelse ($process->users as $user)
+                                            <span class="inline-flex items-center rounded-xl px-3 py-1 text-xs ring-1 ring-white/10 bg-white/10 text-slate-200">
+                                                {{ $user->name }}
+                                            </span>
+                                        @empty
+                                            <span class="text-slate-500 text-sm">Nav pievienotu lietotāju</span>
+                                        @endforelse
+                                    </div>
+                                </td>
+
+                                <td class="px-4 py-3">
+                                    <div class="flex flex-wrap items-center justify-center gap-2">
+
+                                        {{-- Up --}}
+                                        <form action="{{ route('processes.update', $process) }}" method="POST" class="inline">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="hidden" name="swap" value="up">
+                                            <button type="submit"
+                                                class="inline-flex items-center justify-center h-9 w-9 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 ring-1 ring-white/10 transition"
+                                                title="Pārvietot uz augšu">
+                                                ▲
+                                            </button>
+                                        </form>
+
+                                        {{-- Down --}}
+                                        <form action="{{ route('processes.update', $process) }}" method="POST" class="inline">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="hidden" name="swap" value="down">
+                                            <button type="submit"
+                                                class="inline-flex items-center justify-center h-9 w-9 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 ring-1 ring-white/10 transition"
+                                                title="Pārvietot uz leju">
+                                                ▼
+                                            </button>
+                                        </form>
+
+                                        {{-- Edit --}}
+                                        <a href="{{ route('processes.edit', $process) }}"
+                                           class="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 text-sm ring-1 ring-white/10 transition">
+                                            Rediģēt
+                                        </a>
+
+                                        {{-- Delete --}}
+                                        <form action="{{ route('processes.destroy', $process) }}"
+                                              method="POST"
+                                              onsubmit="return confirm('Vai tiešām vēlaties dzēst šo procesu?');"
+                                              class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit"
+                                                class="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-red-300 hover:text-red-200 text-sm ring-1 ring-white/10 transition">
+                                                Dzēst
+                                            </button>
+                                        </form>
+
+                                    </div>
+                                </td>
+
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="text-center py-10 text-slate-400">
+                                    Nav pieejamu procesu.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-6 h-1 mx-4 sm:mx-6 lg:mx-[100px] bg-gradient-to-r from-transparent via-red-600/40 to-transparent rounded"></div>
+
         </div>
     </div>
 </x-app-layout>
