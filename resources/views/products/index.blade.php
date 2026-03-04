@@ -1,156 +1,207 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Produktu saraksts
-        </h2>
+        <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-xl text-white leading-tight">
+                Produktu saraksts
+            </h2>
+            <div class="hidden sm:block text-sm text-slate-400">
+                Produkti • Imports • Eksports
+            </div>
+        </div>
     </x-slot>
 
     <div class="py-6">
         <div class="max-w-full mx-auto">
 
-            {{-- Success flash message --}}
+            {{-- Success --}}
             @if (session('success'))
-                <div
-                    class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative
-                           mx-4 sm:mx-6 lg:mx-[100px] mb-4"
-                    role="alert"
-                >
-                    <strong class="font-bold">Veiksmīgi!</strong>
-                    <span class="block sm:inline">{{ session('success') }}</span>
+                <div class="mx-4 sm:mx-6 lg:mx-[100px] mb-5 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-emerald-200">
+                    <div class="font-semibold">Veiksmīgi!</div>
+                    <div class="text-sm text-emerald-200/90">{{ session('success') }}</div>
                 </div>
             @endif
 
-            {{-- White background container with padding and rounded corners --}}
-            <div class="bg-white shadow-sm rounded-lg p-4 sm:p-6">
+            {{-- Top Controls Card --}}
+            <div class="mx-4 sm:mx-6 lg:mx-[100px] mb-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur shadow-xl">
+                <div class="p-4 sm:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 flex-wrap">
 
-                {{-- Import & Export buttons --}}
-                <div
-                    class="mb-6 px-4 sm:px-6 lg:px-[100px]
-                           flex flex-col md:flex-row md:items-center md:justify-between gap-4 flex-wrap"
-                >
-                    {{-- Export Button --}}
-                    <a href="{{ route('products.export') }}"
-                       class="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">
+                    {{-- Export --}}
+                    <a
+                        href="{{ route('products.export') }}"
+                        class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm ring-1 ring-white/10 transition"
+                    >
                         📤 Eksportēt produktus
                     </a>
 
-                    {{-- Import Form --}}
-                    <form action="{{ route('products.import') }}" method="POST" enctype="multipart/form-data"
-                          class="flex flex-wrap items-center gap-2">
+                    {{-- Import --}}
+                    <form
+                        action="{{ route('products.import') }}"
+                        method="POST"
+                        enctype="multipart/form-data"
+                        class="flex flex-wrap items-center gap-2"
+                    >
                         @csrf
-                        <label class="block text-sm font-medium text-gray-700">
-                            📥 Importēt no Excel:
-                        </label>
-                        <input type="file" name="import_file"
-                               class="block text-xs sm:text-sm text-gray-500
-                                      file:mr-2 file:py-1.5 file:px-3
-                                      file:rounded file:border-0
-                                      file:text-xs sm:file:text-sm file:font-semibold
-                                      file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                               required>
-                        <button type="submit"
-                                class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">
+
+                        <label class="text-sm text-slate-400">📥 Importēt no Excel:</label>
+
+                        <input
+                            type="file"
+                            name="import_file"
+                            class="text-xs sm:text-sm text-slate-300
+                                   file:mr-2 file:py-2 file:px-3
+                                   file:rounded-xl file:border-0
+                                   file:text-xs sm:file:text-sm file:font-semibold
+                                   file:bg-white/10 file:text-white hover:file:bg-white/15
+                                   cursor-pointer"
+                            required
+                        >
+
+                        <button
+                            type="submit"
+                            class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm ring-1 ring-white/10 transition"
+                        >
                             Augšupielādēt
                         </button>
                     </form>
 
-                    {{-- Add New Product --}}
-                    <a href="{{ route('products.create') }}"
-                       class="inline-block px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm">
+                    {{-- Add --}}
+                    <a
+                        href="{{ route('products.create') }}"
+                        class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold shadow"
+                    >
                         + Pievienot jaunu produktu
                     </a>
+
                 </div>
-
-                {{-- Table with horizontal scroll --}}
-                <div class="overflow-x-auto px-2 sm:px-4 lg:px-[100px]">
-                    <table
-                        class="table-auto w-full min-w-[1200px] border-collapse border border-gray-300 bg-white text-xs sm:text-sm"
-                    >
-                        <thead>
-                            <tr class="bg-gray-100">
-                                <th class="border border-gray-300 px-3 py-2">
-                                    <a href="{{ route('products.index', [
-                                        'sort_by' => 'svitr_kods',
-                                        'sort_order' => ($sort_by === 'svitr_kods' && $sort_order === 'asc') ? 'desc' : 'asc'
-                                    ]) }}" class="flex items-center gap-1">
-                                        Svītrkods
-                                        @if ($sort_by === 'svitr_kods')
-                                            @if ($sort_order === 'asc')
-                                                🔼
-                                            @else
-                                                🔽
-                                            @endif
-                                        @endif
-                                    </a>
-                                </th>
-
-                                <th class="border border-gray-300 px-3 py-2">
-                                    <a href="{{ route('products.index', [
-                                        'sort_by' => 'nosaukums',
-                                        'sort_order' => ($sort_by === 'nosaukums' && $sort_order === 'asc') ? 'desc' : 'asc'
-                                    ]) }}" class="flex items-center gap-1">
-                                        Nosaukums
-                                        @if ($sort_by === 'nosaukums')
-                                            @if ($sort_order === 'asc')
-                                                🔼
-                                            @else
-                                                🔽
-                                            @endif
-                                        @endif
-                                    </a>
-                                </th>
-
-                                <th class="border border-gray-300 px-3 py-2">Pārdošanas cena</th>
-                                <th class="border border-gray-300 px-3 py-2">Vairumtirdzniecības cena</th>
-                                <th class="border border-gray-300 px-3 py-2">Daudzums noliktavā</th>
-                                <th class="border border-gray-300 px-3 py-2">Svars (kg)</th>
-                                <th class="border border-gray-300 px-3 py-2">Nom. grupas kods</th>
-                                <th class="border border-gray-300 px-3 py-2">Garums (mm)</th>
-                                <th class="border border-gray-300 px-3 py-2">Platums (mm)</th>
-                                <th class="border border-gray-300 px-3 py-2">Augstums (mm)</th>
-                                <th class="border border-gray-300 px-3 py-2">Darbības</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse ($products as $product)
-                                <tr class="even:bg-gray-50">
-                                    <td class="border border-gray-300 px-3 py-2">{{ $product->svitr_kods }}</td>
-                                    <td class="border border-gray-300 px-3 py-2">{{ $product->nosaukums }}</td>
-                                    <td class="border border-gray-300 px-3 py-2">{{ $product->pardosanas_cena }}</td>
-                                    <td class="border border-gray-300 px-3 py-2">{{ $product->vairumtirdzniecibas_cena ?? '-' }}</td>
-                                    <td class="border border-gray-300 px-3 py-2">{{ $product->daudzums_noliktava ?? '-' }}</td>
-                                    <td class="border border-gray-300 px-3 py-2">{{ $product->svars_neto ?? '-' }}</td>
-                                    <td class="border border-gray-300 px-3 py-2">{{ $product->nomGr_kods }}</td>
-                                    <td class="border border-gray-300 px-3 py-2">{{ $product->garums ?? '-' }}</td>
-                                    <td class="border border-gray-300 px-3 py-2">{{ $product->platums ?? '-' }}</td>
-                                    <td class="border border-gray-300 px-3 py-2">{{ $product->augstums ?? '-' }}</td>
-                                    <td class="border border-gray-300 px-3 py-2 space-y-2">
-                                        <a href="{{ route('products.edit', $product) }}"
-                                           class="text-blue-600 hover:underline block">
-                                            Rediģēt
-                                        </a>
-
-                                        <form method="POST"
-                                              action="{{ route('products.destroy', $product) }}"
-                                              onsubmit="return confirm('Vai tiešām vēlaties dzēst šo produktu?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:underline">
-                                                Dzēst
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="11" class="text-center py-4">Nav pieejami produkti.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-
             </div>
+
+            {{-- Sort helper (same style as Orders) --}}
+            @php
+                function sortLinkProducts($column, $label, $sort_by, $sort_order) {
+                    $isCurrent = $sort_by === $column;
+                    $direction = ($isCurrent && $sort_order === 'asc') ? 'desc' : 'asc';
+                    $arrow = $isCurrent ? ($sort_order === 'asc' ? '⬆️' : '⬇️') : '';
+                    $query = array_merge(request()->all(), ['sort_by' => $column, 'sort_order' => $direction]);
+
+                    return '<a href="'.route('products.index', $query).'" class="inline-flex items-center gap-1 hover:text-white hover:underline text-slate-200">'
+                        .$label.' <span class="text-xs text-slate-400">'.$arrow.'</span></a>';
+                }
+            @endphp
+
+            {{-- Table Card (EXACT like Orders index) --}}
+            <div class="overflow-x-auto mx-2 sm:mx-4 lg:mx-[100px] rounded-2xl border border-white/10 bg-white/5 backdrop-blur shadow-xl">
+                <table class="table-auto w-full text-xs sm:text-sm">
+                    <thead class="bg-white/5">
+                        <tr class="text-left text-slate-200">
+                            <th class="px-4 py-3 whitespace-nowrap">
+                                {!! sortLinkProducts('svitr_kods', 'Svītrkods', $sort_by, $sort_order) !!}
+                            </th>
+                            <th class="px-4 py-3 whitespace-nowrap">
+                                {!! sortLinkProducts('nosaukums', 'Nosaukums', $sort_by, $sort_order) !!}
+                            </th>
+                            <th class="px-4 py-3 whitespace-nowrap">
+                                Pārdošanas cena
+                            </th>
+                            <th class="px-4 py-3 whitespace-nowrap">
+                                Vairumtirdzniecības cena
+                            </th>
+                            <th class="px-4 py-3 whitespace-nowrap">
+                                Daudzums noliktavā
+                            </th>
+                            <th class="px-4 py-3 whitespace-nowrap">
+                                Svars (kg)
+                            </th>
+                            <th class="px-4 py-3 whitespace-nowrap">
+                                Nom. grupas kods
+                            </th>
+                            <th class="px-4 py-3 whitespace-nowrap">
+                                Garums (mm)
+                            </th>
+                            <th class="px-4 py-3 whitespace-nowrap">
+                                Platums (mm)
+                            </th>
+                            <th class="px-4 py-3 whitespace-nowrap">
+                                Augstums (mm)
+                            </th>
+                            <th class="px-4 py-3 whitespace-nowrap text-center">
+                                Darbības
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody class="divide-y divide-white/10">
+                        @forelse ($products as $product)
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="px-4 py-3 max-w-[220px] truncate text-white">
+                                    {{ $product->svitr_kods }}
+                                </td>
+
+                                <td class="px-4 py-3 max-w-[260px] truncate text-slate-200">
+                                    {{ $product->nosaukums }}
+                                </td>
+
+                                <td class="px-4 py-3 max-w-[160px] truncate text-slate-200">
+                                    {{ $product->pardosanas_cena }}
+                                </td>
+
+                                <td class="px-4 py-3 max-w-[190px] truncate text-slate-200">
+                                    {{ $product->vairumtirdzniecibas_cena ?? '-' }}
+                                </td>
+
+                                <td class="px-4 py-3 max-w-[180px] truncate text-slate-200">
+                                    {{ $product->daudzums_noliktava ?? '-' }}
+                                </td>
+
+                                <td class="px-4 py-3 max-w-[140px] truncate text-slate-200">
+                                    {{ $product->svars_neto ?? '-' }}
+                                </td>
+
+                                <td class="px-4 py-3 max-w-[180px] truncate text-slate-200">
+                                    {{ $product->nomGr_kods ?? '-' }}
+                                </td>
+
+                                <td class="px-4 py-3 max-w-[140px] truncate text-slate-200">
+                                    {{ $product->garums ?? '-' }}
+                                </td>
+
+                                <td class="px-4 py-3 max-w-[140px] truncate text-slate-200">
+                                    {{ $product->platums ?? '-' }}
+                                </td>
+
+                                <td class="px-4 py-3 max-w-[140px] truncate text-slate-200">
+                                    {{ $product->augstums ?? '-' }}
+                                </td>
+
+                                <td class="px-4 py-3 text-center whitespace-nowrap space-x-3">
+                                    <a href="{{ route('products.edit', $product) }}"
+                                       class="text-red-300 hover:text-red-200 hover:underline underline-offset-4">
+                                        Rediģēt
+                                    </a>
+
+                                    <form method="POST"
+                                          action="{{ route('products.destroy', $product) }}"
+                                          class="inline"
+                                          onsubmit="return confirm('Vai tiešām vēlaties dzēst šo produktu?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                                class="text-slate-300 hover:text-white hover:underline underline-offset-4">
+                                            Dzēst
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="11" class="text-center py-10 text-slate-400">
+                                    Nav pieejami produkti.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
         </div>
     </div>
 </x-app-layout>

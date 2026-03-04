@@ -58,117 +58,101 @@
                 </div>
             </div>
 
-            {{-- Table Card --}}
-            <div class="mx-2 sm:mx-4 lg:mx-[100px] rounded-2xl border border-white/10 bg-white/5 backdrop-blur shadow-xl">
+            {{-- Table Card (same as Orders) --}}
+            <div class="overflow-x-auto mx-2 sm:mx-4 lg:mx-[100px] rounded-2xl border border-white/10 bg-white/5 backdrop-blur shadow-xl">
+                <table class="table-auto w-full text-xs sm:text-sm">
+                    <thead class="bg-white/5">
+                        <tr class="text-left text-slate-200">
+                            <th class="px-4 py-3 whitespace-nowrap">Nosaukums</th>
+                            <th class="px-4 py-3 whitespace-nowrap">Reģistrācijas numurs</th>
+                            <th class="px-4 py-3 whitespace-nowrap">PVN maksātāja numurs</th>
+                            <th class="px-4 py-3 whitespace-nowrap">Juridiskā adrese</th>
+                            <th class="px-4 py-3 whitespace-nowrap">Kontaktpersonas</th>
+                            <th class="px-4 py-3 whitespace-nowrap">Piegādes adreses</th>
+                            <th class="px-4 py-3 whitespace-nowrap text-center">Darbības</th>
+                        </tr>
+                    </thead>
 
-                <div class="overflow-x-auto lg:overflow-visible">
-                    <table class="w-full text-sm table-fixed lg:table-auto">
+                    <tbody class="divide-y divide-white/10">
+                        @forelse ($clients as $client)
+                            <tr class="hover:bg-white/5 transition-colors">
+                                <td class="px-4 py-3 max-w-[260px] truncate text-white">
+                                    {{ $client->nosaukums }}
+                                </td>
 
-                        <thead class="bg-white/5">
-                            <tr class="text-left text-slate-200">
-                                <th class="px-4 py-3">Nosaukums</th>
-                                <th class="px-4 py-3">Reģistrācijas numurs</th>
-                                <th class="px-4 py-3">PVN maksātāja numurs</th>
-                                <th class="px-4 py-3">Juridiskā adrese</th>
-                                <th class="px-4 py-3 hidden lg:table-cell">Kontaktpersonas</th>
-                                <th class="px-4 py-3 hidden lg:table-cell">Piegādes adreses</th>
-                                <th class="px-4 py-3 text-center w-[140px]">Darbības</th>
+                                <td class="px-4 py-3 max-w-[220px] truncate text-slate-200">
+                                    {{ $client->registracijas_numurs }}
+                                </td>
+
+                                <td class="px-4 py-3 max-w-[220px] truncate text-slate-200">
+                                    {{ $client->pvn_maksataja_numurs ?? '-' }}
+                                </td>
+
+                                <td class="px-4 py-3 max-w-[260px] truncate text-slate-200">
+                                    {{ $client->juridiska_adrese ?? '-' }}
+                                </td>
+
+                                {{-- Contact persons --}}
+                                <td class="px-4 py-3 text-slate-300">
+                                    <ul class="space-y-2">
+                                        @forelse ($client->contactPersons as $cp)
+                                            <li class="text-xs">
+                                                <span class="font-semibold text-white">
+                                                    {{ $cp->kontakt_personas_vards }}
+                                                </span><br>
+                                                <span class="text-slate-400">
+                                                    {{ $cp->{'e-pasts'} ?? '-' }}
+                                                </span><br>
+                                                <span class="text-slate-400">
+                                                    {{ $cp->telefons ?? '-' }}
+                                                </span>
+                                            </li>
+                                        @empty
+                                            <li class="text-slate-500">-</li>
+                                        @endforelse
+                                    </ul>
+                                </td>
+
+                                {{-- Delivery addresses --}}
+                                <td class="px-4 py-3 text-slate-300">
+                                    <ul class="space-y-1 text-xs">
+                                        @forelse ($client->deliveryAddresses as $da)
+                                            <li>{{ $da->piegades_adrese }}</li>
+                                        @empty
+                                            <li class="text-slate-500">-</li>
+                                        @endforelse
+                                    </ul>
+                                </td>
+
+                                {{-- Actions --}}
+                                <td class="px-4 py-3 text-center whitespace-nowrap space-x-3">
+                                    <a href="{{ route('clients.edit', $client) }}"
+                                       class="text-red-300 hover:text-red-200 hover:underline underline-offset-4">
+                                        Rediģēt
+                                    </a>
+
+                                    <form method="POST"
+                                          action="{{ route('clients.destroy', $client) }}"
+                                          class="inline"
+                                          onsubmit="return confirm('Vai tiešām vēlaties dzēst šo klientu?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                                class="text-slate-300 hover:text-white hover:underline underline-offset-4">
+                                            Dzēst
+                                        </button>
+                                    </form>
+                                </td>
                             </tr>
-                        </thead>
-
-                        <tbody class="divide-y divide-white/10">
-
-                            @forelse ($clients as $client)
-
-                                <tr class="hover:bg-white/5 transition">
-
-                                    <td class="px-4 py-3 text-white break-words">
-                                        {{ $client->nosaukums }}
-                                    </td>
-
-                                    <td class="px-4 py-3 text-slate-200">
-                                        {{ $client->registracijas_numurs }}
-                                    </td>
-
-                                    <td class="px-4 py-3 text-slate-200">
-                                        {{ $client->pvn_maksataja_numurs ?? '-' }}
-                                    </td>
-
-                                    <td class="px-4 py-3 text-slate-200 break-words">
-                                        {{ $client->juridiska_adrese ?? '-' }}
-                                    </td>
-
-                                    {{-- Contact persons --}}
-                                    <td class="px-4 py-3 text-slate-300 hidden lg:table-cell">
-                                        <ul class="space-y-2">
-                                            @forelse ($client->contactPersons as $cp)
-                                                <li class="text-xs">
-                                                    <span class="font-semibold text-white">
-                                                        {{ $cp->kontakt_personas_vards }}
-                                                    </span><br>
-
-                                                    <span class="text-slate-400">
-                                                        {{ $cp->{'e-pasts'} ?? '-' }}
-                                                    </span><br>
-
-                                                    <span class="text-slate-400">
-                                                        {{ $cp->telefons ?? '-' }}
-                                                    </span>
-                                                </li>
-                                            @empty
-                                                <li class="text-slate-500">-</li>
-                                            @endforelse
-                                        </ul>
-                                    </td>
-
-                                    {{-- Delivery addresses --}}
-                                    <td class="px-4 py-3 text-slate-300 hidden lg:table-cell">
-                                        <ul class="space-y-1 text-xs">
-                                            @forelse ($client->deliveryAddresses as $da)
-                                                <li>{{ $da->piegades_adrese }}</li>
-                                            @empty
-                                                <li class="text-slate-500">-</li>
-                                            @endforelse
-                                        </ul>
-                                    </td>
-
-                                    {{-- Actions --}}
-                                    <td class="px-4 py-3 text-center space-y-2">
-
-                                        <a href="{{ route('clients.edit', $client) }}"
-                                           class="text-red-300 hover:text-red-200 hover:underline underline-offset-4 block">
-                                            Rediģēt
-                                        </a>
-
-                                        <form method="POST"
-                                              action="{{ route('clients.destroy', $client) }}"
-                                              onsubmit="return confirm('Vai tiešām vēlaties dzēst šo klientu?');">
-                                            @csrf
-                                            @method('DELETE')
-
-                                            <button type="submit"
-                                                    class="text-slate-300 hover:text-white hover:underline underline-offset-4">
-                                                Dzēst
-                                            </button>
-                                        </form>
-
-                                    </td>
-
-                                </tr>
-
-                            @empty
-
-                                <tr>
-                                    <td colspan="7" class="text-center py-10 text-slate-400">
-                                        Nav pieejami klienti.
-                                    </td>
-                                </tr>
-
-                            @endforelse
-
-                        </tbody>
-                    </table>
-                </div>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="text-center py-10 text-slate-400">
+                                    Nav pieejami klienti.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
 
             <div class="mt-6 h-1 mx-4 sm:mx-6 lg:mx-[100px] bg-gradient-to-r from-transparent via-red-600/40 to-transparent rounded"></div>

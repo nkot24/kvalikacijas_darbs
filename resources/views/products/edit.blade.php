@@ -1,77 +1,166 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Rediģēt produktu
-        </h2>
+        <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-xl text-white leading-tight">
+                Rediģēt produktu
+            </h2>
+            <div class="hidden sm:block text-sm text-slate-400">
+                Produkti • Labojumi
+            </div>
+        </div>
     </x-slot>
 
     <div class="py-6">
-        <div class="max-w-4xl mx-auto bg-white shadow-sm rounded-lg p-6">
-            <form method="POST" action="{{ route('products.update', $product) }}">
-                @csrf
-                @method('PUT')
+        <div class="max-w-4xl mx-auto">
 
-                <div class="grid grid-cols-2 gap-6">
-                    <div>
-                        <label for="svitr_kods">Svītrkods</label>
-                        <input type="number" name="svitr_kods" class="mt-1 block w-full" required value="{{ old('svitr_kods', $product->svitr_kods) }}">
-                    </div>
+            {{-- Form Card --}}
+            <div class="mx-2 sm:mx-4 rounded-2xl border border-white/10 bg-white/5 backdrop-blur shadow-xl">
+                <div class="p-5 sm:p-6">
+                    <form method="POST" action="{{ route('products.update', $product) }}">
+                        @csrf
+                        @method('PUT')
 
-                    <div>
-                        <label for="nosaukums">Nosaukums</label>
-                        <input type="text" name="nosaukums" class="mt-1 block w-full" required value="{{ old('nosaukums', $product->nosaukums) }}">
-                    </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
 
-                    <div>
-                        <label for="pardosanas_cena">Pārdošanas cena</label>
-                        <input type="number" step="0.01" name="pardosanas_cena" class="mt-1 block w-full" required value="{{ old('pardosanas_cena', $product->pardosanas_cena) }}">
-                    </div>
+                            {{-- Svītrkods --}}
+                            <div>
+                                <label class="block text-sm font-medium text-slate-200 mb-1">Svītrkods</label>
+                                <input
+                                    type="number"
+                                    name="svitr_kods"
+                                    required
+                                    value="{{ old('svitr_kods', $product->svitr_kods) }}"
+                                    class="w-full rounded-xl border border-white/10 bg-[#0B0F14]/60 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-500/50 focus:ring-red-500/20"
+                                >
+                            </div>
 
-                    <div>
-                        <label for="vairumtirdzniecibas_cena">Vairumtirdzniecības cena</label>
-                        <input type="number" step="0.01" name="vairumtirdzniecibas_cena" class="mt-1 block w-full" value="{{ old('vairumtirdzniecibas_cena', $product->vairumtirdzniecibas_cena) }}">
-                    </div>
+                            {{-- Nosaukums --}}
+                            <div>
+                                <label class="block text-sm font-medium text-slate-200 mb-1">Nosaukums</label>
+                                <input
+                                    type="text"
+                                    name="nosaukums"
+                                    required
+                                    value="{{ old('nosaukums', $product->nosaukums) }}"
+                                    class="w-full rounded-xl border border-white/10 bg-[#0B0F14]/60 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-500/50 focus:ring-red-500/20"
+                                >
+                            </div>
 
-                    <div>
-                        <label for="daudzums_noliktava">Daudzums noliktavā</label>
-                        <input type="number" name="daudzums_noliktava" class="mt-1 block w-full" value="{{ old('daudzums_noliktava', $product->daudzums_noliktava) }}">
-                    </div>
+                            {{-- Pārdošanas cena --}}
+                            <div>
+                                <label class="block text-sm font-medium text-slate-200 mb-1">Pārdošanas cena</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    name="pardosanas_cena"
+                                    required
+                                    value="{{ old('pardosanas_cena', $product->pardosanas_cena) }}"
+                                    class="w-full rounded-xl border border-white/10 bg-[#0B0F14]/60 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-500/50 focus:ring-red-500/20"
+                                >
+                            </div>
 
-                    <div>
-                        <label for="svars_neto">Svars (neto, kg)</label>
-                        <input type="number" step="0.01" name="svars_neto" class="mt-1 block w-full" value="{{ old('svars_neto', $product->svars_neto) }}">
-                    </div>
+                            {{-- Vairumtirdzniecības cena --}}
+                            <div>
+                                <label class="block text-sm font-medium text-slate-200 mb-1">Vairumtirdzniecības cena</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    name="vairumtirdzniecibas_cena"
+                                    value="{{ old('vairumtirdzniecibas_cena', $product->vairumtirdzniecibas_cena) }}"
+                                    class="w-full rounded-xl border border-white/10 bg-[#0B0F14]/60 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-500/50 focus:ring-red-500/20"
+                                >
+                            </div>
 
-                    <div>
-                        <label for="nomGr_kods">Nomenklatūras grupas kods</label>
-                        <input type="text" name="nomGr_kods" class="mt-1 block w-full" required value="{{ old('nomGr_kods', $product->nomGr_kods) }}">
-                    </div>
+                            {{-- Daudzums noliktavā --}}
+                            <div>
+                                <label class="block text-sm font-medium text-slate-200 mb-1">Daudzums noliktavā</label>
+                                <input
+                                    type="number"
+                                    name="daudzums_noliktava"
+                                    value="{{ old('daudzums_noliktava', $product->daudzums_noliktava) }}"
+                                    class="w-full rounded-xl border border-white/10 bg-[#0B0F14]/60 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-500/50 focus:ring-red-500/20"
+                                >
+                            </div>
 
-                    <div>
-                        <label for="garums">Garums (mm)</label>
-                        <input type="number" step="0.01" name="garums" class="mt-1 block w-full" value="{{ old('garums', $product->garums) }}">
-                    </div>
+                            {{-- Svars --}}
+                            <div>
+                                <label class="block text-sm font-medium text-slate-200 mb-1">Svars (neto, kg)</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    name="svars_neto"
+                                    value="{{ old('svars_neto', $product->svars_neto) }}"
+                                    class="w-full rounded-xl border border-white/10 bg-[#0B0F14]/60 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-500/50 focus:ring-red-500/20"
+                                >
+                            </div>
 
-                    <div>
-                        <label for="platums">Platums (mm)</label>
-                        <input type="number" step="0.01" name="platums" class="mt-1 block w-full" value="{{ old('platums', $product->platums) }}">
-                    </div>
+                            {{-- Nom grupa --}}
+                            <div>
+                                <label class="block text-sm font-medium text-slate-200 mb-1">Nomenklatūras grupas kods</label>
+                                <input
+                                    type="text"
+                                    name="nomGr_kods"
+                                    required
+                                    value="{{ old('nomGr_kods', $product->nomGr_kods) }}"
+                                    class="w-full rounded-xl border border-white/10 bg-[#0B0F14]/60 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-500/50 focus:ring-red-500/20"
+                                >
+                            </div>
 
-                    <div>
-                        <label for="augstums">Augstums (mm)</label>
-                        <input type="number" step="0.01" name="augstums" class="mt-1 block w-full" value="{{ old('augstums', $product->augstums) }}">
-                    </div>
+                            {{-- Garums --}}
+                            <div>
+                                <label class="block text-sm font-medium text-slate-200 mb-1">Garums (mm)</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    name="garums"
+                                    value="{{ old('garums', $product->garums) }}"
+                                    class="w-full rounded-xl border border-white/10 bg-[#0B0F14]/60 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-500/50 focus:ring-red-500/20"
+                                >
+                            </div>
+
+                            {{-- Platums --}}
+                            <div>
+                                <label class="block text-sm font-medium text-slate-200 mb-1">Platums (mm)</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    name="platums"
+                                    value="{{ old('platums', $product->platums) }}"
+                                    class="w-full rounded-xl border border-white/10 bg-[#0B0F14]/60 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-500/50 focus:ring-red-500/20"
+                                >
+                            </div>
+
+                            {{-- Augstums --}}
+                            <div>
+                                <label class="block text-sm font-medium text-slate-200 mb-1">Augstums (mm)</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    name="augstums"
+                                    value="{{ old('augstums', $product->augstums) }}"
+                                    class="w-full rounded-xl border border-white/10 bg-[#0B0F14]/60 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-red-500/50 focus:ring-red-500/20"
+                                >
+                            </div>
+
+                        </div>
+
+                        {{-- Actions --}}
+                        <div class="mt-6 flex flex-col sm:flex-row justify-end gap-3">
+                            <a href="{{ route('products.index') }}"
+                               class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-200 text-sm ring-1 ring-white/10 transition text-center">
+                                Atcelt
+                            </a>
+
+                            <button type="submit"
+                                    class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold shadow">
+                                Saglabāt izmaiņas
+                            </button>
+                        </div>
+                    </form>
                 </div>
+            </div>
 
-                <div class="mt-6 flex justify-end">
-                    <a href="{{ route('products.index') }}" class="mr-4 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
-                        Atcelt
-                    </a>
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                        Saglabāt izmaiņas
-                    </button>
-                </div>
-            </form>
+            <div class="mt-6 h-1 mx-2 sm:mx-4 bg-gradient-to-r from-transparent via-red-600/40 to-transparent rounded"></div>
         </div>
     </div>
 </x-app-layout>
