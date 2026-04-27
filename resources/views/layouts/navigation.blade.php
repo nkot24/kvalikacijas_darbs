@@ -169,10 +169,7 @@
                             </x-slot>
 
                             <x-slot name="content">
-                                <x-dropdown-link :href="route('profile.edit')">
-                                    {{ __('Profile') }}
-                                </x-dropdown-link>
-
+                                
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
                                     <x-dropdown-link :href="route('logout')"
@@ -281,9 +278,7 @@
                     </div>
 
                     <div class="mt-3 space-y-1">
-                        <a href="{{ route('profile.edit') }}" class="block {{ $linkBase }} {{ request()->routeIs('profile.edit') ? $linkActive : $linkIdle }}">
-                            {{ __('Profile') }}
-                        </a>
+                        
 
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
