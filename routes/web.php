@@ -1,72 +1,41 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ClientController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\OrderController;
-use App\Http\Controllers\ProcessController;
-use App\Http\Controllers\ProductionController;
-use App\Http\Controllers\TaskController;
-use App\Http\Controllers\AvansaRekinsController;
-use App\Http\Controllers\ProcessProgressController;
-use App\Http\Controllers\ProcessFileController;
-use App\Http\Controllers\OrderListController;
-use App\Http\Controllers\InventoryController;
-use App\Http\Controllers\WorkLogController;
-use App\Http\Controllers\MaterialScanController;
-use App\Models\WorkLog;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+use App\Http\Controllers\{
+    AvansaRekinsController,
+    ClientController,
+    InventoryController,
+    MaterialScanController,
+    OrderController,
+    OrderListController,
+    ProcessController,
+    ProcessFileController,
+    ProcessProgressController,
+    ProductController,
+    ProductionController,
+    ProfileController,
+    TaskController,
+    UserController,
+    WorkLogController
+};
+use Illuminate\Support\Facades\{Auth, DB, Route, Schema};
 use Carbon\Carbon;
 
+Route::get('/', function () {
+    return view('auth.login');
+});
 
-
-    Route::get('/', function () {
-        return view('/auth/login');
-    });
-
-    // ✅ Fixed Dashboard route with $today and $log variables
-    Route::get('/dashboard', function () {
-        $user = Auth::user();
-        $now  = Carbon::now('Europe/Riga');
-        $today = $now->toDateString();
-
-        // Today's log
-        $log = WorkLog::where('user_id', $user->id)
-            ->whereDate('date', $today)
-            ->first();
-
-        // This month's logs for this user
-        $monthLogs = WorkLog::where('user_id', $user->id)
-            ->whereYear('date', $now->year)
-            ->whereMonth('date', $now->month)
-            ->get(['hours_worked']);
-
-        // Sum absolute hours_worked (removes minus sign)
-        $monthHours = $monthLogs->sum(function ($row) {
-            return abs((float) $row->hours_worked);
-        });
-
-        $monthHours = round($monthHours, 2);
-
-        return view('dashboard', compact('log', 'today', 'monthHours'));
-    })->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', function () {
+    return redirect()->route('work.index');
+})->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/clients/full-export', [ClientController::class, 'fullExport'])->name('clients.fullExport');
-    Route::post('/clients/full-import', [ClientController::class, 'fullImport'])->name('clients.fullImport');
-    Route::get('/products/export', [ProductController::class, 'export'])->name('products.export');
-    Route::post('/products/import', [ProductController::class, 'import'])->name('products.import');
-    Route::get('users/export', [UserController::class, 'export'])->name('users.export');
-    Route::post('users/import', [UserController::class, 'import'])->name('users.import');
-    Route::get('/orders/export', [OrderController::class, 'fullExport'])->name('orders.fullExport');
-    Route::post('/orders/import', [OrderController::class, 'fullImport'])->name('orders.fullImport');
+
     Route::get('/orders/complete', [OrderController::class, 'complete'])->name('orders.complete');
-    Route::resource('orders', OrderController::class);
     Route::get('/orders/{order}/print', [OrderController::class, 'print'])->name('orders.print');
+    Route::resource('orders', OrderController::class);
+
+    Route::resource('orderList', OrderListController::class);
+    Route::get('/order-list/completed', [OrderListController::class, 'completed'])->name('orderList.completed');
 
     Route::resource('clients', ClientController::class);
     Route::resource('products', ProductController::class);
@@ -77,90 +46,85 @@ Route::middleware('auth')->group(function () {
     Route::get('/tasks', [TaskController::class, 'index'])->name('tasks.index');
     Route::put('/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
 
-    Route::get('/avansa-rekini/create', [AvansaRekinsController::class, 'create'])->name('avansa_rekini.create');
-    Route::post('/avanss', [AvansaRekinsController::class, 'store'])->name('avanss.store');
-    Route::post('/avansa-rekini/get-orders', [AvansaRekinsController::class, 'getOrders'])->name('avansa_rekini.getOrders');
-    Route::post('/avansa-rekini/generate', [AvansaRekinsController::class, 'generate'])->name('avansa_rekini.generate');
-    Route::get('/api/orders/by-client/{client_id}', [AvansaRekinsController::class, 'getOrders']);
-
-    Route::post('/process-progress', [ProcessProgressController::class, 'store'])->name('process-progress.store');
-    Route::put('/process-progress/{progress}', [ProcessProgressController::class, 'update'])->name('process-progress.update');
-    Route::delete('/process-progress/{progress}', [ProcessProgressController::class, 'destroy'])->name('process-progress.destroy');
-
-    Route::post('/process-files', [ProcessFileController::class, 'store'])->name('process-files.store');
-    Route::get('/process-files/{file}/download', [ProcessFileController::class, 'download'])->name('process-files.download');
-    Route::get('/process-files/{file}/view',     [ProcessFileController::class, 'view'])->name('process-files.view');
-    Route::delete('/process-files/{file}',       [ProcessFileController::class, 'destroy'])->name('process-files.destroy');
-
-    Route::resource('orderList', OrderListController::class);
-    Route::get('/order-list/completed', [OrderListController::class, 'completed'])->name('orderList.completed');
-
-    Route::get('/inventory/scan', [InventoryController::class, 'scanView'])->name('inventory.scan');
-    Route::post('/inventory/scan', [InventoryController::class, 'handleScan'])->name('inventory.scan.handle');
-    Route::post('/inventory/scan/transfer', [InventoryController::class, 'storeTransfer'])->name('inventory.scan.storeTransfer');
-    Route::get('/inventory/transfers', [InventoryController::class, 'transferIndex'])->name('inventory.transfers.index');
-    Route::patch('/inventory/transfers/account', [InventoryController::class, 'transferBulkAccount'])->name('inventory.transfers.account');
-    Route::delete('/inventory/transfers', [InventoryController::class, 'transferBulkDelete'])->name('inventory.transfers.delete');
-
-    Route::get('/darbs', [WorkLogController::class, 'index'])->name('work.index');
-    Route::post('/darbs/sakt', [WorkLogController::class, 'startWork'])->name('work.start');
-    Route::post('/darbs/beigt', [WorkLogController::class, 'endWork'])->name('work.end');
-    Route::get('/darbs/stundas', [WorkLogController::class, 'workHoursView'])->name('work.hours');
-    Route::patch('/work-log/update-time/{id}', [WorkLogController::class, 'updateTime'])
-    ->name('work.updateTime');
-    Route::patch('/work-log/update-field/{id}', [WorkLogController::class, 'updateField']);
-
-
-    Route::prefix('inventory/materials')->name('inventory.materials.')->group(function () {
-        Route::get('/scan', [MaterialScanController::class, 'scanView'])->name('scan');
-        Route::post('/store', [MaterialScanController::class, 'storeScan'])->name('store');
-        Route::get('/', [MaterialScanController::class, 'index'])->name('index');
-        Route::patch('/account', [MaterialScanController::class, 'bulkAccount'])->name('account');
-        Route::delete('/delete', [MaterialScanController::class, 'bulkDelete'])->name('delete');
+    Route::prefix('avansa-rekini')->name('avansa_rekini.')->group(function () {
+        Route::get('/create', [AvansaRekinsController::class, 'create'])->name('create');
+        Route::post('/get-orders', [AvansaRekinsController::class, 'getOrders'])->name('getOrders');
+        Route::post('/generate', [AvansaRekinsController::class, 'generate'])->name('generate');
     });
 
+    Route::post('/avanss', [AvansaRekinsController::class, 'store'])->name('avanss.store');
+    Route::get('/api/orders/by-client/{client_id}', [AvansaRekinsController::class, 'getOrders']);
 
+    Route::prefix('process-progress')->name('process-progress.')->group(function () {
+        Route::post('/', [ProcessProgressController::class, 'store'])->name('store');
+        Route::put('/{progress}', [ProcessProgressController::class, 'update'])->name('update');
+        Route::delete('/{progress}', [ProcessProgressController::class, 'destroy'])->name('destroy');
+    });
 
+    Route::prefix('process-files')->name('process-files.')->group(function () {
+        Route::post('/', [ProcessFileController::class, 'store'])->name('store');
+        Route::get('/{file}/download', [ProcessFileController::class, 'download'])->name('download');
+        Route::get('/{file}/view', [ProcessFileController::class, 'view'])->name('view');
+        Route::delete('/{file}', [ProcessFileController::class, 'destroy'])->name('destroy');
+    });
 
+    Route::prefix('inventory')->name('inventory.')->group(function () {
+        Route::get('/scan', [InventoryController::class, 'scanView'])->name('scan');
+        Route::post('/scan', [InventoryController::class, 'handleScan'])->name('scan.handle');
+        Route::post('/scan/transfer', [InventoryController::class, 'storeTransfer'])->name('scan.storeTransfer');
 
+        Route::get('/transfers', [InventoryController::class, 'transferIndex'])->name('transfers.index');
+        Route::patch('/transfers/account', [InventoryController::class, 'transferBulkAccount'])->name('transfers.account');
+        Route::delete('/transfers', [InventoryController::class, 'transferBulkDelete'])->name('transfers.delete');
 
+        Route::prefix('materials')->name('materials.')->group(function () {
+            Route::get('/', [MaterialScanController::class, 'index'])->name('index');
+            Route::get('/scan', [MaterialScanController::class, 'scanView'])->name('scan');
+            Route::post('/store', [MaterialScanController::class, 'storeScan'])->name('store');
+            Route::patch('/account', [MaterialScanController::class, 'bulkAccount'])->name('account');
+            Route::delete('/delete', [MaterialScanController::class, 'bulkDelete'])->name('delete');
+        });
+    });
+
+    Route::prefix('darbs')->name('work.')->group(function () {
+        Route::get('/', [WorkLogController::class, 'index'])->name('index');
+        Route::post('/sakt', [WorkLogController::class, 'startWork'])->name('start');
+        Route::post('/beigt', [WorkLogController::class, 'endWork'])->name('end');
+        Route::get('/stundas', [WorkLogController::class, 'workHoursView'])->name('hours');
+    });
+
+    Route::patch('/work-log/update-time/{id}', [WorkLogController::class, 'updateTime'])->name('work.updateTime');
+    Route::patch('/work-log/update-field/{id}', [WorkLogController::class, 'updateField']);
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-
-//  Secure auto-refresh backend route
 Route::get('/check-updates', function () {
-    // Block direct access from browser (only allow AJAX requests)
     if (!request()->ajax()) {
-        abort(403, 'Unauthorized');
+        abort(403);
     }
 
-    $tables = DB::select('SHOW TABLES');
     $latest = 0;
 
-    foreach ($tables as $table) {
-        // Extract table name (MySQL returns column like "Tables_in_databasename")
+    foreach (DB::select('SHOW TABLES') as $table) {
         $tableName = array_values((array) $table)[0];
 
-        // Skip tables that don’t have timestamps
         if (!Schema::hasColumn($tableName, 'updated_at')) {
             continue;
         }
 
         try {
-            $time = DB::table($tableName)->latest('updated_at')->value('updated_at');
-            if ($time && strtotime($time) > $latest) {
-                $latest = strtotime($time);
+            $updatedAt = DB::table($tableName)->latest('updated_at')->value('updated_at');
+
+            if ($updatedAt && strtotime($updatedAt) > $latest) {
+                $latest = strtotime($updatedAt);
             }
-        } catch (\Exception $e) {
-            // Ignore problematic tables
-        }
+        } catch (Throwable $e) {}
     }
 
     return response()->json(['last_update' => $latest]);
 })->middleware('auth');
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
