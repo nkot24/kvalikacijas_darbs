@@ -5,9 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Str;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Imports\UsersImport;
-use App\Exports\UsersExport;
+
 
 
 class UserController extends Controller
@@ -68,21 +66,6 @@ class UserController extends Controller
     {
         $user->delete();
         return redirect()->route('users.index');
-    }
-    public function import(Request $request)
-    {
-        $request->validate([
-            'import_file' => 'required|file|mimes:xlsx,xls',
-        ]);
-
-        Excel::import(new UsersImport, $request->file('import_file'));
-
-        return redirect()->route('users.index')->with('success', 'Lietotāji veiksmīgi importēti.');
-    }
-
-    public function export()
-    {
-        return Excel::download(new UsersExport, 'users.xlsx');
     }
 
 }

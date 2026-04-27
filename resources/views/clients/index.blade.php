@@ -4,9 +4,6 @@
             <h2 class="font-semibold text-xl text-white leading-tight">
                 Klientu saraksts
             </h2>
-            <div class="hidden sm:block text-sm text-slate-400">
-                Klienti • Imports • Eksports
-            </div>
         </div>
     </x-slot>
 
@@ -25,30 +22,7 @@
             <div class="mx-4 sm:mx-6 lg:mx-[100px] mb-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur shadow-xl">
                 <div class="p-4 sm:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 flex-wrap">
 
-                    <a href="{{ route('clients.fullExport') }}"
-                       class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm ring-1 ring-white/10 transition">
-                        📤 Eksportēt visus klientus
-                    </a>
-
-                    <form action="{{ route('clients.fullImport') }}" method="POST" enctype="multipart/form-data"
-                          class="flex flex-wrap items-center gap-2">
-                        @csrf
-
-                        <label class="text-sm text-slate-400">📥 Importēt no Excel:</label>
-
-                        <input type="file" name="import_file"
-                               class="text-xs sm:text-sm text-slate-300
-                                      file:mr-2 file:py-2 file:px-3
-                                      file:rounded-xl file:border-0
-                                      file:text-xs sm:file:text-sm file:font-semibold
-                                      file:bg-white/10 file:text-white hover:file:bg-white/15"
-                               required>
-
-                        <button type="submit"
-                                class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm ring-1 ring-white/10 transition">
-                            Augšupielādēt
-                        </button>
-                    </form>
+                    
 
                     <a href="{{ route('clients.create') }}"
                        class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold shadow">

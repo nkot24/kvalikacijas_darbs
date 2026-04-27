@@ -6,9 +6,7 @@ use App\Models\Client;
 use App\Models\ContactPerson;
 use App\Models\DeliveryAddress;
 use Illuminate\Http\Request;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\ClientsFullExport;
-use App\Imports\ClientsFullImport;
+
 
 class ClientController extends Controller
 {
@@ -115,21 +113,5 @@ class ClientController extends Controller
         return redirect()->route('clients.index')->with('success', 'Client deleted.');
     }
 
-    // ✅ Export full Excel (3 sheets: clients, contact persons, delivery addresses)
-    public function fullExport()
-    {
-        return Excel::download(new ClientsFullExport, 'clients.xlsx');
-    }
-
-    // ✅ Import full Excel (3 sheets into appropriate tables)
-    public function fullImport(Request $request)
-    {
-        $request->validate([
-            'import_file' => 'required|file|mimes:xlsx,xls',
-        ]);
-
-        Excel::import(new ClientsFullImport, $request->file('import_file'));
-
-        return redirect()->route('clients.index')->with('success', 'Clients, contact persons and delivery addresses imported successfully.');
-    }
+    
 }
