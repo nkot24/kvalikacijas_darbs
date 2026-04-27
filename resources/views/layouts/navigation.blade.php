@@ -22,11 +22,11 @@
                 <!-- Left -->
                 <div class="flex items-center gap-6">
                     <!-- Logo -->
-                    <a href="{{ $isWorker ? route('tasks.index') : route('dashboard') }}" class="flex items-center gap-3">
+                    <a href="{{ $isWorker ? route('tasks.index') : route('work.index') }}" class="flex items-center gap-3">
                         <img src="{{ asset('images/logo.png') }}" class="h-10 w-auto" alt="Logo">
                         <div class="hidden sm:block leading-tight">
                             <div class="text-white font-semibold tracking-wide">
-                                {{ config('app.name', 'Laravel') }}
+                                {{ config('app.name', 'Order Production Management') }}
                             </div>
                         
                         </div>
