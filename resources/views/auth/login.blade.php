@@ -51,24 +51,6 @@
                         <x-input-error :messages="$errors->get('password')" class="mt-2 text-red-300" />
                     </div>
 
-                    <div class="flex items-center justify-between gap-3">
-                        <label for="remember_me" class="inline-flex items-center gap-2 select-none">
-                            <input
-                                id="remember_me"
-                                type="checkbox"
-                                name="remember"
-                                class="h-4 w-4 rounded border-white/20 bg-transparent text-red-600 focus:ring-red-500/20"
-                            >
-                            <span class="text-sm text-slate-300">{{ __('Remember me') }}</span>
-                        </label>
-
-                        @if (Route::has('password.request'))
-                            <a href="{{ route('password.request') }}"
-                               class="text-sm text-slate-300 hover:text-white hover:underline underline-offset-4">
-                                Aizmirsāt paroli?
-                            </a>
-                        @endif
-                    </div>
 
                     <div class="pt-2">
                         <button
