@@ -4,9 +4,6 @@
             <h2 class="font-semibold text-xl text-white leading-tight">
                 Izpildītie iepirkumi
             </h2>
-            <div class="hidden sm:block text-sm text-slate-400">
-                Meklēšana • Statusi • Vēsture
-            </div>
         </div>
     </x-slot>
 

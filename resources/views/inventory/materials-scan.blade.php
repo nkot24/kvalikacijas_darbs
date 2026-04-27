@@ -4,9 +4,7 @@
             <h2 class="font-semibold text-xl text-white leading-tight">
                 {{ __('Skenēt izmantotos materiālus') }}
             </h2>
-            <div class="hidden sm:block text-sm text-slate-400">
-                Noliktava • Materiāli • Skenēšana
-            </div>
+
         </div>
     </x-slot>
 

@@ -2,7 +2,6 @@
     <x-slot name="header">
         <div class="flex items-center justify-between gap-4">
             <h2 class="text-xl font-semibold text-white">Mani uzdevumi</h2>
-            <div class="hidden sm:block text-sm text-slate-400">Aktuālie • Nākamie • Statusi</div>
         </div>
     </x-slot>
 
