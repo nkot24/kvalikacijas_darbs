@@ -2,18 +2,18 @@
     @php
         $isWorker = auth()->user()->role === 'worker';
 
-        $navShell     = "border-b border-white/10 bg-[#0F172A]/70 backdrop-blur";
-        $linkBase     = "inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition";
-        $linkIdle     = "text-slate-300 hover:text-white hover:bg-white/5";
-        $linkActive   = "text-white bg-white/10 ring-1 ring-white/10";
+        $navShell = "border-b border-white/10 bg-[#0F172A]/70 backdrop-blur";
+        $linkBase = "inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition";
+        $linkIdle = "text-slate-300 hover:text-white hover:bg-white/5";
+        $linkActive = "text-white bg-white/10 ring-1 ring-white/10";
 
-        $triggerBase  = "inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition";
-        $triggerIdle  = "text-slate-300 hover:text-white hover:bg-white/5";
+        $triggerBase = "inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition";
+        $triggerIdle = "text-slate-300 hover:text-white hover:bg-white/5";
 
-        $userBtn      = "inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg text-slate-300 bg-white/5 hover:bg-white/10 hover:text-white ring-1 ring-white/10 transition";
-        $mobileBtn    = "inline-flex items-center justify-center p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 ring-1 ring-white/10 transition";
+        $userBtn = "inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg text-slate-300 bg-white/5 hover:bg-white/10 hover:text-white ring-1 ring-white/10 transition";
+        $mobileBtn = "inline-flex items-center justify-center p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 ring-1 ring-white/10 transition";
 
-        $panel        = "mt-3 rounded-2xl border border-white/10 bg-[#0B0F14]/60 backdrop-blur p-2";
+        $panel = "mt-3 rounded-2xl border border-white/10 bg-[#0B0F14]/60 backdrop-blur p-2";
     @endphp
 
     <nav x-data="{ open: false }" class="relative z-50 {{ $navShell }}">
@@ -28,9 +28,7 @@
                             <div class="text-white font-semibold tracking-wide">
                                 {{ config('app.name', 'Laravel') }}
                             </div>
-                            <div class="text-xs text-slate-400">
-                                Production • Orders • Analytics
-                            </div>
+                        
                         </div>
                     </a>
 
@@ -138,6 +136,14 @@
                             <a href="{{ route('orderList.index') }}"
                                class="{{ $linkBase }} {{ request()->routeIs('orderList.*') ? $linkActive : $linkIdle }}">
                                 {{ __('Iepirkumu saraksts') }}
+                            </a>
+                            <a href="{{ route('inventory.scan') }}"
+                               class="{{ $linkBase }} {{ request()->routeIs('inventory.scan') ? $linkActive : $linkIdle }}">
+                                {{ __('Skenēt saražoto produkciju') }}
+                            </a>
+                            <a href="{{ route('inventory.materials.scan') }}"
+                               class="{{ $linkBase }} {{ request()->routeIs('inventory.materials.scan') ? $linkActive : $linkIdle }}">
+                                {{ __('Norakstīšana') }}
                             </a>
 
                             <a href="{{ route('work.index') }}"
@@ -254,6 +260,12 @@
                             </a>
                             <a href="{{ route('orderList.index') }}" class="block {{ $linkBase }} {{ request()->routeIs('orderList.*') ? $linkActive : $linkIdle }}">
                                 {{ __('Iepirkumu saraksts') }}
+                            </a>
+                            <a href="{{ route('inventory.scan') }}" class="block {{ $linkBase }} {{ request()->routeIs('inventory.scan') ? $linkActive : $linkIdle }}">
+                                {{ __('Skenēt saražoto produkciju') }}
+                            </a>
+                            <a href="{{ route('inventory.materials.scan') }}" class="block {{ $linkBase }} {{ request()->routeIs('inventory.materials.scan') ? $linkActive : $linkIdle }}">
+                                {{ __('Norakstīšana') }}
                             </a>
                             <a href="{{ route('work.index') }}" class="block {{ $linkBase }} {{ request()->routeIs('work.*') ? $linkActive : $linkIdle }}">
                                 {{ __('Sākt/beigt darbu') }}
