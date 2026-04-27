@@ -9,7 +9,9 @@ Alpine.start();
 if (
     !window.location.pathname.startsWith('/login') &&
     !window.location.pathname.startsWith('/register') &&
-    !window.location.pathname.startsWith('/forgot-password')
+    !window.location.pathname.startsWith('/forgot-password') &&
+    !window.location.pathname.includes('/create') &&
+    !window.location.pathname.includes('/edit')
 ) {
     let lastUpdateTime = null;
 
