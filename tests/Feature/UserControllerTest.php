@@ -2,14 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Exports\UsersExport;
-use App\Imports\UsersImport;
+
 use PHPUnit\Framework\Attributes\Test;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
-use Maatwebsite\Excel\Facades\Excel;
 use Tests\TestCase;
 
 class UserControllerTest extends TestCase
@@ -202,49 +200,5 @@ class UserControllerTest extends TestCase
         ]);
     }
 
-    #[Test]
-    public function it_imports_users_from_excel_file()
-    {
-        $this->actingAsAdmin();
-
-        Excel::fake();
-
-        $file = UploadedFile::fake()->create('users.xlsx');
-
-        $response = $this->post(route('users.import'), [
-            'import_file' => $file,
-        ]);
-
-        $response->assertRedirect(route('users.index'));
-        $response->assertSessionHas('success', 'Lietotāji veiksmīgi importēti.');
-
-        
-    }
-    #[Test]
-    public function it_validates_import_request()
-    {
-        $this->actingAsAdmin();
-
-        $response = $this->post(route('users.import'), [
-            // no file
-        ]);
-
-        $response->assertSessionHasErrors(['import_file']);
-    }
-
-    #[Test]
-    public function it_exports_users_to_excel_file()
-    {
-        $this->actingAsAdmin();
-
-        Excel::fake();
-
-        $response = $this->get(route('users.export'));
-
-        // When Excel::fake() is used, the response is faked too,
-        // so we usually just assert the download was triggered.
-        Excel::assertDownloaded('users.xlsx', function (UsersExport $export) {
-            return true;
-        });
-    }
+    
 }

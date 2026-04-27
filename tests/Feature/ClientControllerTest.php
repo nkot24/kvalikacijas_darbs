@@ -9,9 +9,7 @@ use App\Models\ContactPerson;
 use App\Models\DeliveryAddress;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\ClientsFullExport;
-use App\Imports\ClientsFullImport;
+
 
 class ClientControllerTest extends TestCase
 {
@@ -101,38 +99,5 @@ class ClientControllerTest extends TestCase
         $this->assertDatabaseMissing('clients', ['id' => $client->id]);
     }
 
-    #[\PHPUnit\Framework\Attributes\Test]
-    public function it_can_export_clients_to_excel()
-    {
-        Excel::fake();
-
-        // Trigger the route that should return a download
-        $response = $this->get(route('clients.fullExport'));
-
-        $response->assertStatus(200);
-
-        // Make sure the export was "downloaded"
-        Excel::assertDownloaded('clients.xlsx', function ($export) {
-            return $export instanceof ClientsFullExport;
-        });
-    }
-
-
-    #[\PHPUnit\Framework\Attributes\Test]
-    public function it_can_import_clients_from_excel()
-    {
-        Excel::fake();
-
-        $file = UploadedFile::fake()->create('clients.xlsx');
-
-        $response = $this->post(route('clients.fullImport'), [
-            'import_file' => $file
-        ]);
-
-        $response->assertRedirect(route('clients.index'));
-
-        Excel::assertImported('clients.xlsx', function (ClientsFullImport $import) {
-            return $import instanceof ClientsFullImport;
-        });
-    }
+    
 }

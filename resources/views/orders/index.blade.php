@@ -4,9 +4,6 @@
             <h2 class="font-semibold text-xl text-white leading-tight">
                 Pasūtījumu saraksts
             </h2>
-            <div class="hidden sm:block text-sm text-slate-400">
-                Pārvaldība • Eksports/Imports • Statusi
-            </div>
         </div>
     </x-slot>
 
@@ -58,43 +55,7 @@
                     </form>
 
                     {{-- Actions --}}
-                    <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-                        <a
-                            href="{{ route('orders.fullExport') }}"
-                            class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm ring-1 ring-white/10 transition"
-                        >
-                            📤 Eksportēt
-                        </a>
-
-                        <form
-                            action="{{ route('orders.fullImport') }}"
-                            method="POST"
-                            enctype="multipart/form-data"
-                            class="flex flex-wrap items-center gap-2"
-                        >
-                            @csrf
-
-                            <label class="text-sm text-slate-400">📥</label>
-
-                            <input
-                                type="file"
-                                name="file"
-                                class="text-xs sm:text-sm text-slate-300
-                                       file:mr-2 file:py-2 file:px-3
-                                       file:rounded-xl file:border-0
-                                       file:text-xs sm:file:text-sm file:font-semibold
-                                       file:bg-white/10 file:text-white hover:file:bg-white/15
-                                       cursor-pointer"
-                                required
-                            >
-
-                            <button
-                                type="submit"
-                                class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white text-sm ring-1 ring-white/10 transition"
-                            >
-                                Augšupielādēt
-                            </button>
-                        </form>
+                    
 
                         <a
                             href="{{ route('orders.create') }}"

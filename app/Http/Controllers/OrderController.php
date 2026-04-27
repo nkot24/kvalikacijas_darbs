@@ -6,9 +6,7 @@ use App\Models\Order;
 use App\Models\Client;
 use App\Models\Product;
 use Illuminate\Http\Request;
-use App\Exports\OrdersFullExport;
-use App\Imports\OrdersFullImport;
-use Maatwebsite\Excel\Facades\Excel;
+
 
 class OrderController extends Controller
 {
@@ -154,18 +152,7 @@ class OrderController extends Controller
         return redirect()->route('orders.index')->with('success', 'Pasūtījums dzēsts veiksmīgi!');
     }
 
-    public function fullExport()
-    {
-        return Excel::download(new OrdersFullExport, 'orders_full.xlsx');
-    }
-
-    public function fullImport(Request $request)
-    {
-        $request->validate(['file' => 'required|mimes:xlsx,csv']);
-        Excel::import(new OrdersFullImport, $request->file('file'));
-
-        return redirect()->route('orders.index')->with('success', 'Import pabeigts veiksmīgi!');
-    }
+    
 
     public function print(Order $order)
     {
