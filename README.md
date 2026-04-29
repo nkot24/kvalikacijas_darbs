@@ -65,7 +65,7 @@ php artisan db:seed
 
 8. Palaist lokālo serveri:
 
-```powershell
+
 php artisan serve
 ```
 
@@ -76,18 +76,15 @@ Kad mājaslapa tiek uzstartēta tad login name-Test password-password
 
 ## Testēšana
 
-Projektā ir konfigurēta testu vide (Pest/PHPUnit). Lai palaistu testus:
+Komandas kas jāpalaiž pirms testiem:
 
-```powershell
+
+# 1. terminālī
+php artisan serve
+
+# 2. terminālī
 php artisan test
-# vai, ja izmanto composer skriptus:
-composer test
 ```
-
-## Eksporta / Importa funkcijas
-
-Projektā ir mape `app/Exports` un `app/Imports` ar sagatavotām klasēm Excel datu eksportam un importam.
-Funkcionalitāte izmanto `maatwebsite/excel` bibliotēku (skatīt `composer.json`).
 
 ## Biežāk lietotās komandas
 
